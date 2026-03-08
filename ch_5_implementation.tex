@@ -985,20 +985,20 @@ implemented in the system.
 
 \subsection{UI Design Approach}
 
-\textbf{Guidelines (200–300 words):}
+The project utilizes shadcn/ui, a collection of beautifully designed, copy-pasteable components built on Radix UI primitives and Tailwind CSS. The design follows a modern minimalist philosophy emphasizing ``less is more'' with clean, uncluttered interfaces, ample white space, subtle shadows for depth and hierarchy. This creates sleek, elegant UIs that distinct from heavier systems like Material Design.
 
-Students must explain:
+\textbf{UI/UX methodology} centers on developer-owned, composable components with beautiful defaults that ensure unified appearance out-of-the-box. Components are designed to naturally fit together as a consistent system, promoting rapid iteration, customization via design tokens (CSS variables for colors, spacing, radii), and a utility-first Tailwind workflow.
 
-\begin{itemize}
-    \item Design principles used (Minimalistic, Material Design, Dark Mode, etc.)
-    \item UI/UX methodology followed
-    \item Wireframing tools used (Figma, Adobe XD, etc.)
-    \item Consistency in color scheme and typography
-    \item Accessibility considerations
-    \item Responsive design strategy (Mobile-first, adaptive layout)
-\end{itemize}
+Wireframes were create using Google stitch, and further design decisions were made while implementing.
 
-Write detailed explanation here.
+\textbf{Consistency in color scheme and typography} is maintained through a centralized theming system using CSS variables and Tailwind configuration. A simple, restrained palette (often neutral base with accent colors) ensures visual harmony, while typography relies on limited sizes (typically 4 levels) and weights (semibold for emphasis, regular for body) via utility classes, avoiding shipped styles to allow full project control.
+
+\textbf{Accessibility considerations} draw from Radix UI's foundation, using built-in keyboard navigation, focus management, ARIA attributes, screen reader support, high-contrast ratios (where customized), and reduced-motion preferences. Components aim for WCAG compliance, though final accessibility depends on implementation choices like proper semantic usage and alt text.
+
+\textbf{Responsive design strategy} adopts a mobile-first approach leveraging Tailwind's responsive utilities (breakpoints: sm 640px, md 768px, lg 1024px, xl 1280px, etc.). Components adapt fluidly via classes like sm md, ensuring seamless scaling across devices with adaptive patterns (e.g., collapsible navigation, drawers on mobile).
+
+Overall, the approach delivers a clean, accessible, themeable, and performant interface aligned with current minimalist web trends.
+
 
 % -------------------------------------------------
 % 5.5.2 Screen-wise Implementation
@@ -1006,7 +1006,7 @@ Write detailed explanation here.
 
 \subsection{Screen-wise Implementation}
 
-Each major screen must be explained using the following structure:
+Each major screen explains following structure:
 
 \begin{itemize}
     \item \textbf{Purpose of Screen}
@@ -1016,60 +1016,66 @@ Each major screen must be explained using the following structure:
     \item \textbf{Validation and Error Handling}
 \end{itemize}
 
-% -------------------------------------------------
-% Example Screen Template
-% -------------------------------------------------
+% ==============
 
-\subsubsection{Screen 1: Login Screen}
+\subsubsection{Screen 1: Register Screen}
 
-\textbf{Purpose:}  
-Describe why this screen exists and which users access it.
+\textbf{Purpose:}
+This screen enables new unauthenticated users to create an account in the system by providing their essential details.
 
-\textbf{Components:}
-\begin{itemize}
+\textbf{Components:} 
+\begin{itemize} 
+    \item Name field
     \item Email field
     \item Password field
-    \item Login button
-    \item Forgot password link
+    \item Register button
+    \item Login link (for existing users) 
 \end{itemize}
 
-\textbf{Functional Flow:}
-Explain what happens when user enters credentials.
+\textbf{Functional Flow:} The user enters their name, email, and password. Upon clicking the Register button, a loading spinner is displayed to indicate the submission is in progress. If the registration is successful, a confirmation toast notification appears and the user is redirected to a success page /register/success. If it fails, an error toast notification is displayed.
 
-\textbf{Backend Integration:}
-Explain authentication API call.
+\textbf{Backend Integration:} The form submission triggers a signUp server action. This action processes the credentials securely on the backend. The request is managed using a useTransition hook for state updates to handle asynchronous execution without blocking the client.
 
-\textbf{Validation:}
-Explain required field validation and error messages.
+\textbf{Validation:} Client-side validation is enforced in real-time using react-hook-form integrated with a Zod schema. Each field checks for input validity on change, displaying specific inline error messages and applying ARIA invalid attributes if the requirements (e.g., proper email format, minimum password length) are not met.
 
-% \begin{figure}[h]
-% \centering
-% \includegraphics[width=0.6\textwidth]{Figures/login_screen.png}
-% \caption{Login Screen}
-% \end{figure}
+\begin{center}
+  \includegraphics[width=\linewidth]{Figures/web/reg.png}
+  \smallskip
+  \textbf{Figure X:} Register Screen.
+\end{center}
+
 
 % -------------------------------------------------
 
-\subsubsection{Screen 2: Dashboard Screen}
+\subsubsection{Screen 2: Student Dashboard Screen}
 
-\textbf{Purpose:}  
-Explain dashboard objective.
+\textbf{Purpose:}
+This screen serves as the primary landing page for authenticated students. It provides an immediate academic overview, displaying all the subjects the student is currently enrolled in, along with their high-level details and attendance status.
 
-\textbf{Components:}
+\textbf{Components:} 
 \begin{itemize}
-    \item Navigation bar
-    \item Data cards
-    \item Action buttons
+    \item Welcome greeting
+    \item Responsive grid layout for subject cards \item 
+    \textbf{Subject Card:}    
+    \begin{itemize} 
+        \item Subject Name and Credit Hours badge
+        \item Subject Code, Teacher Name, and Class Name
+        \item Attendance section (Link to detailed attendance, percentage, and visual progress bar)
+        \item Conditional warning message for low attendance
+    \end{itemize}
 \end{itemize}
 
-\textbf{Functional Flow:}
-Explain how data loads dynamically.
+\textbf{Functional Flow:} Upon logging in, the student is redirected to the dashboard. The page automatically fetches the student's enrolled subjects. The subjects are displayed as cards in a responsive grid. The user can view their current attendance percentage for each subject. If attendance falls below the \text{80} threshold, the progress bar turns red and a warning message ("⚠️ Below minimum requirement") is displayed. The user can click the "Attendance" link on any card to navigate to the detailed attendance page for that specific subject.
 
-\textbf{Backend Integration:}
-Explain API endpoints used.
+\textbf{Backend Integration:} The screen uses React Server Components (RSC) to asynchronously fetch the student's subjects using the getStudentSubjects data access function before rendering the page. This ensures the data is loaded securely on the server without exposing API endpoints directly to the client.
 
-\textbf{Security Considerations:}
-Explain role-based access control.
+\textbf{Validation:} The SubjectCard component includes conditional rendering logic to validate the \texttt{attendancePercentage}. If the value is strictly less than 80, it applies critical (red) styling to the text and progress bar, and displays a specific warning message to alert the student. Otherwise, it uses success (green) styling for the attendance indicators.
+
+\begin{center}
+  \includegraphics[width=\linewidth]{Figures/web/st-das.png}
+  \smallskip
+  \textbf{Figure X:} student Dashboard Screen.
+\end{center}
 
 % \begin{figure}[h]
 % \centering
@@ -1079,34 +1085,96 @@ Explain role-based access control.
 
 % -------------------------------------------------
 
-\subsubsection{Screen 3: Create Post / Input Screen}
+\subsubsection{Screen 3: Student Leave Request Screen}
 
-Explain detailed functionality including:
-\begin{itemize}
-    \item Form submission
-    \item Data validation
-    \item Database storage
-    \item UI feedback
-\end{itemize}
+\textbf{Purpose:}
+This screen enables an authenticated student to submit a formal leave request for a specific enrolled subject. The request is then forwarded to their respective Department Batch Advisor for further review.
 
-% \begin{figure}[h]
-% \centering
-% \includegraphics[width=0.7\textwidth]{Figures/create_post_screen.png}
-% \caption{Create Post Screen}
-% \end{figure}
+\textbf{Components:} \begin{itemize} \item \textbf{Text Content:} Page title (``New Leave Request'') and informational text explaining the purpose of the form. \item \textbf{Navigation Link:} "View all leave Requests" link pointing to the student's leave history. \item \textbf{Form Inputs:} \begin{itemize} \item Subject Selection Dropdown \item Date Picker (Calendar Popover) \item Reason Title Input \item Description Textarea \item Image Evidence Uploader \end{itemize} \item \textbf{Submit Button:} Disables temporarily and shows a loading state ("Submitting...") during the form submission. \end{itemize}
+
+\textbf{Functional Flow:} The user accesses the screen, which dynamically loads their currently enrolled subjects. They fill out the form by picking a subject, selecting a valid date, providing a title and detailed reason, and selectively attaching an image (e.g., a medical certificate). When the user clicks "Submit Leave Request", the system attempts to send the request. If successful, the form is cleared, the page is refreshed to sync the latest state, and a success toast notification appears. If an error occurs, an error toast is displayed.
+
+\textbf{Backend Integration:} Before rendering the screen, Server-Side logic enforces route authorization via \texttt{requirePermission({ leaveRequest: ["create"] })}. If unauthorized, the user is redirected. Once authorized, \texttt{getStudentEnrolledSubjects()} retrieves the necessary data. Upon form submission, the client-side form triggers a Next.js Server Action named \texttt{sendLeaveRequest}. The call runs non-blockingly using React's \texttt{useTransition}.
+
+\textbf{Validation:} Client-side validation is primarily handled via \texttt{react-hook-form} and Zod (\texttt{leaveRequestSchema}) which shows errors as user types.
+Specific field constraints include: \begin{itemize} \item \textbf{Date Restrictions:} The Date Picker dynamically disables dates that are in the past, dates that are more than 4 days in the future, and weekends (Saturdays and Sundays). \item \textbf{General Validation:} Form shows errors as user types for title and description \end{itemize}
+
+\begin{center}
+  \includegraphics[width=\linewidth]{Figures/web/st-LR.png}
+  \smallskip
+  \textbf{Figure X:} student leave request Screen.
+\end{center}
 
 % -------------------------------------------------
 
-% Add as many screens as required:
-% Profile Screen
-% Settings Screen
-% Admin Panel
-% Payment Screen
-% ML Prediction Screen
-% Results Visualization Screen
-% Chat Screen
-% Blockchain Wallet Screen
-% etc.
+\subsubsection{Screen 4: Student New Complaint Screen}
+
+\textbf{Purpose:}
+This screen provides an interface for students to submit new complaints regarding various issues (e.g., academic, administrative). Submitted complaints are forwarded to the respective department's BA for review and resolution.
+
+\textbf{Components:} \begin{itemize} \item \textbf{Header:} Title ("New Complaint") and helper text explaining the purpose and destination of the complaint. \item \textbf{Complaint Form:} \begin{itemize} \item Title input field \item Details textarea for concise description \item Category dropdown (e.g., ACADEMIC) \item Action Buttons: "Reset" to clear the form and "Submit" to send the complaint. \end{itemize} \end{itemize}
+
+\textbf{Functional Flow:} The user accesses the screen and fills in the necessary details—assigning a title, specifying the complaint details, selecting an appropriate category. The user can click "Reset" at any point to clear their inputs. Upon clicking "Submit", a loading transition starts ("Submiting..."). If the submission is successful, a confirmation toast appears, the form is reset, and the user is redirected back to the main complaints listing page (\texttt{/student/complaints}). If an error occurs, an error toast notifies the user.
+
+\textbf{Backend Integration:} The form uses a Next.js Server Action named \texttt{CreateComplaint}. This action handles the secure processing of the complaint data on the server. The submission process is wrapped in React's \texttt{useTransition} hook to manage the pending UI state and a \texttt{tryCatch} utility to gracefully handle any server-side exceptions or API failures without unmounting the form.
+
+\textbf{Validation:} Client-side validation is enforced using \texttt{react-hook-form} paired with Zod validation (\texttt{complaintSchema}). The form validates inputs \texttt{onChange}. If a validation happens (e.g., missing title or details, exceeding length limits), the UI responds immediately by setting the ARIA invalid state on the related input and showing error messages below the field component.
+
+\begin{center}
+  \includegraphics[width=\linewidth]{Figures/web/st-comp-new.png}
+  \smallskip
+  \textbf{Figure X:} student new complaint Screen.
+\end{center}
+
+% -------------------------------------------------
+
+\subsubsection{Screen 5: Professor Attendance Screen}
+
+\textbf{Purpose:}
+This screen enables professors to manage and record the attendance for a specific class offering. It allows bulk marking of attendance and provides the ability to specify the lecture's topic, date, and duration. Professor can see leave request from students with their status.
+
+\textbf{Components:} \begin{itemize} \item \textbf{Header:} Title ("Manage attendance for class") \item \textbf{Lecture Details Form:} \begin{itemize} \item Topic input field \item Date picker (Calendar popover) \item Start Time and End Time selectors (Popover dropdowns) \end{itemize} \item \textbf{Attendance Table:} \begin{itemize} \item Bulk Selection Header (Count of students and selected students) \item Bulk Action Buttons ("Mark as Present", "Mark as Absent") \item Student Rows (Image, Name with optional Leave Request indicator, Registration Number) \item Individual Attendance Radio buttons (Present/Absent for each student) \end{itemize} \item \textbf{Action Button:} "Mark Attendance" button to submit the form. \end{itemize}
+
+\textbf{Functional Flow:} The professor arrives at the screen which loads the roster for the assigned class securely from the server. They enter the lecture details: topic, date (automatically disabled for future dates or weekends), start time, and end time.
+
+For attendance, the default state for all students is "Absent". The professor can mark attendance individually using radio buttons per student, or use checkboxes to select multiple students and apply a bulk status via the "Mark as Present" or "Mark as Absent" buttons above the table. If a student has a pending leave request, a blinking alert icon appears next to their name, which opens a dialog detailing the request's date and reason, with a link to view full details.
+
+Upon clicking "Mark Attendance", the client initiates a server action transition. If successful, a toast notification confirms submission, the form's lecture topic is cleared, and the attendance states revert to the default (Absent).
+
+\textbf{Backend Integration:} The initial student list is fetched asynchronously via the \texttt{getProfessorSectionStudents({ offeringId })} function on the server side before the page fully renders. The page leverages a \texttt{Suspense} boundary to display a skeleton loader while this data is fetching. Form submission utilizes a Next.js Server Action named \texttt{markAttendance}. The action executes safely via a \texttt{tryCatch} utility, running inside a React \texttt{useTransition} hook to maintain UI responsiveness without a page reload.
+
+\textbf{Validation:} The \texttt{AttendanceForm} uses \texttt{react-hook-form} with a Zod resolver (\texttt{attendanceFormSchema}). \begin{itemize} \item \textbf{Date Validation:} The date picker restricts selection to the current date or past dates, filtering out weekends. Manually selecting an invalid date updates the field error state instantly. \item \textbf{Time Validation:} The logic prevents selecting an 'End Time' that is the identical block as the 'Start Time'. \item \textbf{General Validation:} Any failed constraints during submission trigger inline field errors or global error toasts. \end{itemize}
+
+\begin{center}
+  \includegraphics[width=\linewidth]{Figures/web/prf-att.png}
+  \smallskip
+  \textbf{Figure X:} Proffessor attendance Screen.
+\end{center}
+
+% -------------------------------------------------
+
+\subsubsection{Screen 6: Batch Advisor Complaints Screen}
+
+\textbf{Purpose:}
+This screen provides Batch Advisors with a centralized dashboard to view, manage, and process complaints submitted by students within their assigned batch.
+
+\textbf{Components:}
+\begin{itemize}
+    \item \textbf{Header:} Page title ("Batch Advisor Complaints") and a brief description.
+    \item \textbf{Filter and Search Bar:}
+    \begin{itemize} \item Global text search input (searches across title, details, and student names) \item Dropdown filters for Status, Attachment presence, and Category \item Date Range picker (Calendar popover) \item "Clear Filters" button (conditionally rendered when filters are active) \end{itemize} \item \textbf{Complaints Data Table:} \begin{itemize} \item Draggable column headers for customizable row ordering via drag-and-drop \item Data columns: Serial Number, Student (Name + Registration No), Title (truncated), Category, Status (badge styling), Created Date, Attachment status, and Actions \item "No complaints found" empty state \end{itemize} \item \textbf{Pagination Controls:} \begin{itemize} \item Rows per page selector \item Current result range indicator (e.g., "1-10 of 50") \item Navigation buttons (First, Previous, Next, Last) \end{itemize} \end{itemize}
+
+\textbf{Functional Flow:} The Batch Advisor accesses the page to see a paginated list of complaints. They can filter the data using the search bar, dropdowns, or date picker; these interactions dynamically update the URL search parameters to maintain state. The table columns can be reordered by dragging the headers horizontally. Clicking on the "Actions" column allows the advisor to interact with a specific complaint (e.g., view details or change status). The pagination controls at the bottom navigate through large data sets.
+
+\textbf{Backend Integration:} The page uses Next.js server components to fetch data initially. \texttt{baComplaintsSearchParamsCache} from \texttt{nuqs} parses the URL search parameters on the server and passes them to the \texttt{baGetComplaints(params)} data access layer, executing database queries efficiently. For client-side interactions, the \texttt{BaComplaintsTable} utilizes \texttt{nuqs}' \texttt{useQueryStates} to synchronize filter, sort, and pagination states (like \texttt{sortBy}, \texttt{page}, \texttt{status}) with the browser's URL, updating the server-rendered results incrementally.
+
+\textbf{Validation:} Filter variables and pagination inputs are validated and parsed through tightly typed \texttt{nuqs} parsers (\texttt{baComplaintsSearchParamsParsers}) to ensure the backend receives clean, safe parameters (e.g., ensuring page numbers are integers, and categories map to valid \texttt{ComplaintCategory} enums).
+
+\begin{center}
+  \includegraphics[width=\linewidth]{Figures/web/ba-lr.png}
+  \smallskip
+  \textbf{Figure X:} BA complaints Screen.
+\end{center}
 
 % -------------------------------------------------
 % 5.5.3 Navigation Flow Diagram
@@ -1114,14 +1182,36 @@ Explain detailed functionality including:
 
 \subsection{Navigation Flow Diagram}
 
-Students must include a navigation flow diagram showing how screens 
-are connected.
+\begin{center}
+  \includegraphics[width=\linewidth]{Figures/flow/st-f.png}
+  \smallskip
+  \textbf{Figure X:} Student navigation flow.
+\end{center}
 
-% \begin{figure}[h]
-% \centering
-% \includegraphics[width=\textwidth]{Figures/navigation_flow.png}
-% \caption{Application Navigation Flow}
-% \end{figure}
+\begin{center}
+  \includegraphics[width=\linewidth]{Figures/flow/acc-f.png}
+  \smallskip
+  \textbf{Figure X:} Accountant navigation flow.
+\end{center}
+
+
+\begin{center}
+  \includegraphics[width=\linewidth]{Figures/flow/prf-f.png}
+  \smallskip
+  \textbf{Figure X:} Professor navigation flow.
+\end{center}
+
+\begin{center}
+  \includegraphics[width=\linewidth]{Figures/flow/hod.png}
+  \smallskip
+  \textbf{Figure X:} HOD navigation flow.
+\end{center}
+
+\begin{center}
+  \includegraphics[width=\linewidth]{Figures/flow/admin-f.png}
+  \smallskip
+  \textbf{Figure X:} Admin navigation flow.
+\end{center}
 
 % -------------------------------------------------
 % 5.5.4 Responsiveness & Performance
@@ -1129,14 +1219,64 @@ are connected.
 
 \subsection{Responsiveness and Performance}
 
-\textbf{Guidelines (150–250 words):}
-
-Explain:
+\textbf{Mobile and desktop adaptibility:}
 \begin{itemize}
-    \item Mobile and desktop adaptability
-    \item Loading time optimization
-    \item State management strategy
+     
+    \item \textbf{Sidebar:}
+\begin{itemize}
+    \item Large screens (desktop) show sidebar open by default.
+    \item On smaller screens (mobile) sidebar is hidden by default and can be toggled using sidebar toggler in header.
 \end{itemize}
+
+\begin{center}
+  \includegraphics[width=\linewidth]{Figures/web/prf-das.png}
+  \smallskip
+  \textbf{Figure X:} Professor dashboard on desktop screen.
+\end{center}
+\begin{center}
+  \includegraphics[width=\linewidth]{Figures/web/prf-das-mob.png}
+  \smallskip
+  \textbf{Figure X:} Professor dashboard on mobile screen.
+\end{center}
+
+    \item \textbf{Header:}
+\begin{itemize}
+    \item Large screens (desktop) show header links expanded.
+    \item Smaller screens (mobile) show header collapsed by default which can be toggled using menu icon.
+\end{itemize}
+\end{itemize}
+
+\textbf{Loading time optimization:}
+
+\begin{itemize}
+    \item \textbf{Strategic Suspense Boundaries \& Skeleton Loaders:} Implements the wrapper-renders-first pattern across all portal roles. The page shell and core UI elements paint immediately, while data-heavy tables are deferred using dedicated skeleton components (e.g., \texttt{AtRiskStudentsTableSkeleton}), ensuring faster initial layouts.
+    \item \textbf{Parallel Independent Database Queries:} Utilizes \texttt{Promise.all()} to concurrently fetch lists and their total counts alongside required relations (e.g., in \texttt{get-complaints.ts}). This eliminates sequential waterfalls and reduces database round-trips, making data-heavy routes significantly faster.
+    \item \textbf{Per-Request Deduplication:} Wraps global authorization checks (e.g., \texttt{requireSession}) in \texttt{React.cache()}. If multiple React Server Components on a single page request the user session natively, the database query executes exactly once.
+    \item \textbf{Non-Blocking UI Transitions:} Heavily utilizes \texttt{useTransition} for parameter updates via \texttt{nuqs} and form submissions. The interface remains fully interactive instead of freezing while Next.js fetches fresh Server Component payloads for sorting, filtering, or pagination.
+    \item \textbf{Asynchronous Sidebar Streaming:} Isolates non-critical peripheral data, such as sidebar announcements, within \texttt{Suspense} boundaries. This ensures that slow auxiliary fetches never block the main content's rendering pipeline.
+\end{itemize}
+
+
+\textbf{State management Strategy:}
+
+\textbf{Responsiveness}
+\begin{itemize}
+    \item \textbf{Instant UI feedback:} \texttt{useState} and \texttt{useReducer} updates are synchronous and local, resulting in zero network delay for toggles, form changes, modals, and sorting UI.
+    \item \textbf{URL-driven state:} Using \texttt{nuqs} keeps filters, pagination, and sorting in the URL, ensuring that page reloads or shareable links maintain the exact state without requiring additional fetches.
+    \item \textbf{Snappy transitions:} Client-side transitions are highly responsive because the Next.js App Router combined with Server Components only re-renders the changed parts when parameters update.
+    \item \textbf{Navigation consistency:} Drawer/sheet modals, tabs, and collapsible sections re-open correctly on back/forward navigation due to reliable URL synchronization.
+\end{itemize}
+
+\textbf{Performance}
+\begin{itemize}
+    \item \textbf{Minimal re-renders:} \texttt{useState} and \texttt{useReducer} localize updates, affecting only the owning component or its subtree.
+    \item \textbf{Efficient parsing:} \texttt{nuqs} parsers run on the server once per request, removing any client-side parsing overhead during the initial payload load.
+    \item \textbf{Lightweight hooks:} The \texttt{useQueryStates} hook is negligible in size ($\sim$3--5 KB gzipped), automatically memoized, and prevents unnecessary re-renders when unrelated parameters change.
+    \item \textbf{No global store footprint:} Avoiding a global state store removes the unnecessary subscription overhead across unrelated components.
+    \item \textbf{Data freshness:} Server Components fetch fresh data on parameter changes, naturally avoiding the stale client cache issues that are common in pure client-side state management architectures.
+    \item \textbf{Near-zero bundle impact:} Combining \texttt{nuqs} with built-in React hooks keeps the client JavaScript bundle extremely small.
+\end{itemize}
+
 
 % -------------------------------------------------
 % 5.6 Deployment
@@ -1144,30 +1284,27 @@ Explain:
 
 \section{Deployment}
 
-\textbf{Guidelines:}
-Describe:
-\begin{itemize}
-    \item Deployment platform (AWS, Vercel, Firebase, etc.)
-    \item CI/CD if used
-    \item Server configuration
-    \item Mobile app deployment method
-\end{itemize}
+This section describes the deployment platforms and architectural services used in the project.
 
 \begin{table}[h]
 \centering
-\caption{Deployment Details}
-\begin{tabularx}{\textwidth}{|p{3cm}|p{3cm}|X|}
+\renewcommand{\arraystretch}{1.5}
+\caption{Deployment \& Infrastructure Details}
+\begin{tabularx}{\textwidth}{|p{3.5cm}|p{3cm}|X|}
 \hline
-\textbf{Component} & \textbf{Platform} & \textbf{URL/Details} \\
+\textbf{Component} & \textbf{Platform} & \textbf{Details} \\
 \hline
-Backend & AWS EC2 & https://example-backend.com \\
+Frontend \& Backend (Next.js) & Vercel & Fully managed serverless deployment handling the React UI, Server Actions, API routes, and edge caching. \\
 \hline
-Frontend & Vercel & https://example-frontend.com \\
+Database \& Storage & Neon Serverless Postgres & Managed serverless PostgreSQL database connected via Prisma ORM for auto-scaling and connection pooling. \\
 \hline
-Mobile App & Firebase Hosting & Play Store / TestFlight Link \\
+Background Jobs \& Workflows & Inngest & Event-driven durable execution engine used to manage deferred operations (e.g., scheduled announcements). \\
+\hline
+Security \& Bot Protection & Arcjet dashboard & Integrated security layer for rate limiting, bot detection, and malicious request blocking directly within the Next.js middleware. \\
 \hline
 \end{tabularx}
 \end{table}
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
