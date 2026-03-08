@@ -1038,11 +1038,12 @@ This screen enables new unauthenticated users to create an account in the system
 
 \textbf{Validation:} Client-side validation is enforced in real-time using react-hook-form integrated with a Zod schema. Each field checks for input validity on change, displaying specific inline error messages and applying ARIA invalid attributes if the requirements (e.g., proper email format, minimum password length) are not met.
 
-\begin{center}
+\begin{figure}[H]
+  \centering
   \includegraphics[width=\linewidth]{Figures/web/reg.png}
-  \smallskip
-  \textbf{Figure X:} Register Screen.
-\end{center}
+  \caption{Register Screen}
+  \label{fig:register-screen}
+\end{figure}
 
 
 % -------------------------------------------------
@@ -1065,17 +1066,18 @@ This screen serves as the primary landing page for authenticated students. It pr
     \end{itemize}
 \end{itemize}
 
-\textbf{Functional Flow:} Upon logging in, the student is redirected to the dashboard. The page automatically fetches the student's enrolled subjects. The subjects are displayed as cards in a responsive grid. The user can view their current attendance percentage for each subject. If attendance falls below the \text{80} threshold, the progress bar turns red and a warning message ("⚠️ Below minimum requirement") is displayed. The user can click the "Attendance" link on any card to navigate to the detailed attendance page for that specific subject.
+\textbf{Functional Flow:} Upon logging in, the student is redirected to the dashboard. The page automatically fetches the student's enrolled subjects. The subjects are displayed as cards in a responsive grid. The user can view their current attendance percentage for each subject. If attendance falls below the \text{80} threshold, the progress bar turns red and a warning message ("Below minimum requirement") is displayed. The user can click the "Attendance" link on any card to navigate to the detailed attendance page for that specific subject.
 
 \textbf{Backend Integration:} The screen uses React Server Components (RSC) to asynchronously fetch the student's subjects using the getStudentSubjects data access function before rendering the page. This ensures the data is loaded securely on the server without exposing API endpoints directly to the client.
 
 \textbf{Validation:} The SubjectCard component includes conditional rendering logic to validate the \texttt{attendancePercentage}. If the value is strictly less than 80, it applies critical (red) styling to the text and progress bar, and displays a specific warning message to alert the student. Otherwise, it uses success (green) styling for the attendance indicators.
 
-\begin{center}
+\begin{figure}[H]
+  \centering
   \includegraphics[width=\linewidth]{Figures/web/st-das.png}
-  \smallskip
-  \textbf{Figure X:} student Dashboard Screen.
-\end{center}
+  \caption{Student Dashboard Screen}
+  \label{fig:student-dashboard}
+\end{figure}
 
 % \begin{figure}[h]
 % \centering
@@ -1099,11 +1101,12 @@ This screen enables an authenticated student to submit a formal leave request fo
 \textbf{Validation:} Client-side validation is primarily handled via \texttt{react-hook-form} and Zod (\texttt{leaveRequestSchema}) which shows errors as user types.
 Specific field constraints include: \begin{itemize} \item \textbf{Date Restrictions:} The Date Picker dynamically disables dates that are in the past, dates that are more than 4 days in the future, and weekends (Saturdays and Sundays). \item \textbf{General Validation:} Form shows errors as user types for title and description \end{itemize}
 
-\begin{center}
+\begin{figure}[H]
+  \centering
   \includegraphics[width=\linewidth]{Figures/web/st-LR.png}
-  \smallskip
-  \textbf{Figure X:} student leave request Screen.
-\end{center}
+  \caption{Student Leave Request Screen}
+  \label{fig:student-leave-request}
+\end{figure}
 
 % -------------------------------------------------
 
@@ -1120,11 +1123,12 @@ This screen provides an interface for students to submit new complaints regardin
 
 \textbf{Validation:} Client-side validation is enforced using \texttt{react-hook-form} paired with Zod validation (\texttt{complaintSchema}). The form validates inputs \texttt{onChange}. If a validation happens (e.g., missing title or details, exceeding length limits), the UI responds immediately by setting the ARIA invalid state on the related input and showing error messages below the field component.
 
-\begin{center}
+\begin{figure}[H]
+  \centering
   \includegraphics[width=\linewidth]{Figures/web/st-comp-new.png}
-  \smallskip
-  \textbf{Figure X:} student new complaint Screen.
-\end{center}
+  \caption{Student New Complaint Screen}
+  \label{fig:student-complaint}
+\end{figure}
 
 % -------------------------------------------------
 
@@ -1145,11 +1149,12 @@ Upon clicking "Mark Attendance", the client initiates a server action transition
 
 \textbf{Validation:} The \texttt{AttendanceForm} uses \texttt{react-hook-form} with a Zod resolver (\texttt{attendanceFormSchema}). \begin{itemize} \item \textbf{Date Validation:} The date picker restricts selection to the current date or past dates, filtering out weekends. Manually selecting an invalid date updates the field error state instantly. \item \textbf{Time Validation:} The logic prevents selecting an 'End Time' that is the identical block as the 'Start Time'. \item \textbf{General Validation:} Any failed constraints during submission trigger inline field errors or global error toasts. \end{itemize}
 
-\begin{center}
+\begin{figure}[H]
+  \centering
   \includegraphics[width=\linewidth]{Figures/web/prf-att.png}
-  \smallskip
-  \textbf{Figure X:} Proffessor attendance Screen.
-\end{center}
+  \caption{Professor Attendance Screen}
+  \label{fig:professor-attendance}
+\end{figure}
 
 % -------------------------------------------------
 
@@ -1170,11 +1175,12 @@ This screen provides Batch Advisors with a centralized dashboard to view, manage
 
 \textbf{Validation:} Filter variables and pagination inputs are validated and parsed through tightly typed \texttt{nuqs} parsers (\texttt{baComplaintsSearchParamsParsers}) to ensure the backend receives clean, safe parameters (e.g., ensuring page numbers are integers, and categories map to valid \texttt{ComplaintCategory} enums).
 
-\begin{center}
+\begin{figure}[H]
+  \centering
   \includegraphics[width=\linewidth]{Figures/web/ba-lr.png}
-  \smallskip
-  \textbf{Figure X:} BA complaints Screen.
-\end{center}
+  \caption{Batch Advisor Complaints Screen}
+  \label{fig:ba-complaints}
+\end{figure}
 
 % -------------------------------------------------
 % 5.5.3 Navigation Flow Diagram
@@ -1182,36 +1188,41 @@ This screen provides Batch Advisors with a centralized dashboard to view, manage
 
 \subsection{Navigation Flow Diagram}
 
-\begin{center}
+\begin{figure}[H]
+  \centering
   \includegraphics[width=\linewidth]{Figures/flow/st-f.png}
-  \smallskip
-  \textbf{Figure X:} Student navigation flow.
-\end{center}
+  \caption{Student Navigation Flow}
+  \label{fig:student-nav-flow}
+\end{figure}
 
-\begin{center}
+\begin{figure}[H]
+  \centering
   \includegraphics[width=\linewidth]{Figures/flow/acc-f.png}
-  \smallskip
-  \textbf{Figure X:} Accountant navigation flow.
-\end{center}
+  \caption{Accountant Navigation Flow}
+  \label{fig:accountant-nav-flow}
+\end{figure}
 
 
-\begin{center}
+\begin{figure}[H]
+  \centering
   \includegraphics[width=\linewidth]{Figures/flow/prf-f.png}
-  \smallskip
-  \textbf{Figure X:} Professor navigation flow.
-\end{center}
+  \caption{Professor Navigation Flow}
+  \label{fig:professor-nav-flow}
+\end{figure}
 
-\begin{center}
+\begin{figure}[H]
+  \centering
   \includegraphics[width=\linewidth]{Figures/flow/hod.png}
-  \smallskip
-  \textbf{Figure X:} HOD navigation flow.
-\end{center}
+  \caption{HOD Navigation Flow}
+  \label{fig:hod-nav-flow}
+\end{figure}
 
-\begin{center}
+\begin{figure}[H]
+  \centering
   \includegraphics[width=\linewidth]{Figures/flow/admin-f.png}
-  \smallskip
-  \textbf{Figure X:} Admin navigation flow.
-\end{center}
+  \caption{Admin Navigation Flow}
+  \label{fig:admin-nav-flow}
+\end{figure}
 
 % -------------------------------------------------
 % 5.5.4 Responsiveness & Performance
