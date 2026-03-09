@@ -11,9 +11,6 @@ performance of the implemented system.
 Testing ensures that all functional and non-functional 
 requirements defined in earlier chapters are satisfied.
 
-Depending on the project domain (Machine Learning, Web, 
-Mobile Application, Blockchain, etc.), evaluation methods 
-may vary.
 
 % -------------------------------------------------
 % 6.1 Testing Strategy
@@ -41,46 +38,110 @@ Write detailed explanation here.
 
 Unit testing verifies individual modules independently.
 
-\textbf{Guidelines:}
-\begin{itemize}
-    \item Each major function/module must be tested
-    \item Provide input, expected output, and result
-    \item Mention Pass/Fail status
-\end{itemize}
-
 \subsection{UT-01: User Registration}
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \caption{Unit Test Case – User Registration}
 \begin{tabularx}{\textwidth}{|c|X|X|c|}
 \hline
 \textbf{Test ID} & \textbf{Input} & \textbf{Expected Output} & \textbf{Result} \\
 \hline
-UT-01 & Valid user credentials & Account created successfully & Pass \\
+UT-01 & Valid registration details & Account created successfully and redirects to success page & Pass \\
 \hline
-UT-02 & Missing email field & Error message displayed & Pass \\
+UT-02 & Empty or missing required fields & Validation error messages are displayed under inputs & Pass \\
+\hline
+UT-03 & Registration with an existing email & Error toast is displayed indicating failure & Pass \\
 \hline
 \end{tabularx}
 \end{table}
 
-\subsection{UT-02: Login Module}
+\subsection{UT-02: User Login}
 
-Add more unit test cases similarly.
+\begin{table}[H]
+\centering
+\caption{Unit Test Case – User Login}
+\begin{tabularx}{\textwidth}{|c|X|X|c|}
+\hline
+\textbf{Test ID} & \textbf{Input} & \textbf{Expected Output} & \textbf{Result} \\
+\hline
+UT-04 & Valid login credentials (Director role) & Login successful and redirects to director dashboard & Pass \\
+\hline
+UT-05 & Valid login credentials (Student role) & Login successful and redirects to student dashboard & Pass \\
+\hline
+UT-06 & Invalid email or password & Error toast displayed indicating invalid credentials & Pass \\
+\hline
+UT-07 & Empty or missing required fields & Validation error messages are displayed under inputs & Pass \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{UT-03: UI Components}
+
+\begin{table}[H]
+\centering
+\caption{Unit Test Case – UI Components (Button, Input, Badge, Card, Avatar)}
+\begin{tabularx}{\textwidth}{|c|X|X|c|}
+\hline
+\textbf{Test ID} & \textbf{Input} & \textbf{Expected Output} & \textbf{Result} \\
+\hline
+UT-08 & Render component with default props & Components render successfully without crashing & Pass \\
+\hline
+UT-09 & Render with specific variant props (e.g., destructive) & Components apply specific CSS classes correctly & Pass \\
+\hline
+UT-10 & Simulated user typing (Input component) & Input field correctly stores and displays the typed value & Pass \\
+\hline
+UT-11 & Fallback rendering (Avatar component) & Displays initials if the primary profile image fails to load & Pass \\
+\hline
+UT-12 & Semantic composition (Card component) & Card header, content, and footer sections align properly & Pass \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{UT-04: Schema Validation}
+
+\begin{table}[H]
+\centering
+\caption{Unit Test Case – Zod Schema Validation}
+\begin{tabularx}{\textwidth}{|c|X|X|c|}
+\hline
+\textbf{Test ID} & \textbf{Input} & \textbf{Expected Output} & \textbf{Result} \\
+\hline
+UT-13 & Valid credentials passed to \texttt{loginSchema} & Object successfully parsed with \texttt{success: true} & Pass \\
+\hline
+UT-14 & Invalid email formats and short passwords passed to \texttt{loginSchema} & Schema rejects object and throws correct validation error messages & Pass \\
+\hline
+UT-15 & Valid inputs passed to \texttt{registerSchema} & Object successfully parsed with \texttt{success: true} & Pass \\
+\hline
+UT-16 & Name strings $<3$ chars passed to \texttt{registerSchema} & Schema rejects parsing and throws minimum length error & Pass \\
+\hline
+UT-17 & Valid subject data (name, code, credits) passed to \texttt{subjectSchema} & Course details are validated and accepted & Pass \\
+\hline
+UT-18 & Negative credit hours or $>4$ credits passed to \texttt{subjectSchema} & Schema rejects object structure & Pass \\
+\hline
+UT-19 & Valid profile updates (with and without optional fields) passed to \texttt{updateProfileSchema} & Object successfully validates and handles optional imageKey & Pass \\
+\hline
+UT-20 & Name strings $<3$ or $>20$ chars passed to \texttt{updateProfileSchema} & Schema rejects update and throws min/max validation boundaries & Pass \\
+\hline
+UT-21 & Valid complaint submission (all required fields + proper category enum) passed to \texttt{complaintSchema} & Complaint parameters are validated and accepted & Pass \\
+\hline
+UT-22 & Invalid/fake complaint categories or short title/details passed to \texttt{complaintSchema} & Schema successfully rejects invalid inputs and strict enums & Pass \\
+\hline
+\end{tabularx}
+\end{table}
+
 
 % -------------------------------------------------
 % 6.3 Integration Testing
 % -------------------------------------------------
-
-\section{Integration Testing}
+\subsection{Integration Testing}
 
 Integration testing ensures that modules interact correctly.
 
-\textbf{Guidelines (150–200 words):}
 \begin{itemize}
-    \item Describe module interaction testing
-    \item Explain API testing if applicable
-    \item Mention database connectivity validation
+    \item \textbf{Module Interaction Testing:} Module interaction testing is implemented to meticulously validate the data flow between Next.js server actions (e.g., \texttt{signIn}, \texttt{signUp}, \texttt{forgotPassword}) and the backend authentication services (Better Auth). By simulating real-world scenarios, these tests ensure that frontend inputs are accurately processed and securely mapped to backend handlers. They verify that session tokens and user roles are correctly generated, assigned, and evaluated across different components, guaranteeing seamless and secure communication between the application's client-facing forms and internal logic.
+    \item \textbf{API Testing:} API testing is executed by evaluating internal server actions and endpoints. The testing suite simulates a broad spectrum of request states—including malformed payloads, invalid credentials, and unverified users—to guarantee robust error handling. Additionally, route and layout guards are tested to ensure that protected APIs correctly intercept unauthorized traffic and redirect users appropriately based on their dynamic session roles.
+    \item \textbf{Database Connectivity Validation:} Database connectivity validation and external service integration verify our data layer contract. Tests ensure that the application layer correctly bridges with the database by validating that user records and sessions are accurately stored and retrieved. Furthermore, we validate payload construction and connections to external modules, such as our SMTP transporter (Nodemailer), ensuring that critical outbound workflows like password resets are structured correctly before reaching production.
 \end{itemize}
 
 \begin{table}[h]
@@ -90,12 +151,17 @@ Integration testing ensures that modules interact correctly.
 \hline
 \textbf{Test ID} & \textbf{Modules Integrated} & \textbf{Expected Result} & \textbf{Result} \\
 \hline
-IT-01 & Frontend + Backend API & Data successfully retrieved & Pass \\
+IT-01 & Next.js Route Guards + Session API & Unauthorized roles redirected; Admin user allowed access & Pass \\
 \hline
-IT-02 & Backend + Database & Record stored correctly & Pass \\
+IT-02 & Auth Server Action + SMTP Transporter & Password reset payload accurately constructed and dispatched & Pass \\
+\hline
+IT-03 & Auth Server Action + Better Auth API & Valid login credentials succeed and return specific user role & Pass \\
+\hline
+IT-04 & Auth Server Action + Better Auth API & Valid user data successfully processed and account created & Pass \\
 \hline
 \end{tabularx}
 \end{table}
+
 
 % -------------------------------------------------
 % 6.4 System Testing
@@ -160,49 +226,6 @@ Explain security verification here.
 % -------------------------------------------------
 % 6.7 Machine Learning Model Evaluation (If Applicable)
 % -------------------------------------------------
-
-\section{Model Evaluation (For ML-Based Projects)}
-
-This section is required only for Machine Learning projects.
-
-\textbf{Guidelines (200–300 words):}
-\begin{itemize}
-    \item Mention dataset split (Train/Test)
-    \item Explain evaluation metrics
-    \item Present confusion matrix
-    \item Compare baseline models
-\end{itemize}
-
-\subsection{Evaluation Metrics}
-
-\begin{itemize}
-    \item Accuracy
-    \item Precision
-    \item Recall
-    \item F1-Score
-\end{itemize}
-
-\begin{table}[h]
-\centering
-\caption{Model Performance Comparison}
-\renewcommand{\arraystretch}{1.3}
-\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lcccc}
-\toprule
-\textbf{Model} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} \\
-\midrule
-CNN & 94\% & 92\% & 93\% & 92.5\% \\
-Random Forest & 89\% & 88\% & 87\% & 87.5\% \\
-\bottomrule
-\end{tabular*}
-\end{table}
-
-
-
-\begin{figure}[h]
-\centering
-% \includegraphics[width=0.6\textwidth]{Figures/confusion_matrix.png}
-\caption{Confusion Matrix}
-\end{figure}
 
 % -------------------------------------------------
 % 6.8 User Acceptance Testing (UAT)
