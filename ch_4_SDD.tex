@@ -11,97 +11,278 @@ This chapter includes architectural design, UML models, data flow models, and da
 
 \subsection{Design Methodology}
 
-This project follows a structured design methodology. Depending on the project type, one of the following approaches may be adopted:
+This project does not follow a single design philosophy. Instead, it combines several
+complementary patterns, each chosen because it solves a specific problem in the system.
+The sections below describe each approach, why it was selected, and how it connects to
+the others.
 
 \begin{itemize}
-    \item Object-Oriented Design (OOD)
-    \item Model-View-Controller (MVC)
-    \item Layered Architecture
-    \item Microservices Architecture
-    \item Client-Server Architecture
-    \item Data-Centric Design (for ML systems)
-\end{itemize}
+    \item \subsection*{Agile Development Process}
+The project runs in two-week sprints. Sprint~1 covered authentication and role setup.
+Sprint~2 built the fee module. Sprint~3 handled complaints. This rhythm was chosen
+because the requirements were not fully settled at the start — conversations with the
+HOD, students, and the accounts office kept surfacing new edge cases (e.g., whether a
+batch advisor should see all department complaints or only their batch's). Short cycles
+let the team absorb that feedback without throwing away large amounts of work.
 
-The selected methodology ensures modularity, loose coupling, reusability, and scalability.
+\textbf{Why it fits:} University portal is client-facing and evolve
+with institutional policy. A fixed-plan waterfall process would have locked in
+decisions before the team understood how leave approval should chain from teacher to
+HOD to admin. Agile keeps those decisions open until they are actually understood.
 
-\textbf{Guidelines:}
+    \item \subsection*{Monolithic Architecture}
+The system is a single Next.js application backed by one PostgreSQL database on Neon
+DB, deployed as one unit. There are no separate microservices.
+
+\textbf{Why it fits this domain:} For a team of two developers at an early stage, this is the correct call. Microservices introduce deployment pipelines, inter-service networking, distributed tracing, and contract versioning. None of those problems need solving yet. The codebase is one repository, the database is one schema, the deployment is one command. The architecture is internally modular — Leave, Fee, Complaint, and Announcement logic live in separate directories with their own API routes and database queries.
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    \item \subsection*{Role-Based Access Control (RBAC)}
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    The system defines six roles: Student, Proffessor, BA, HOD, Admin, and Accountant. Every API route and UI component checks the user's
+role before running. A teacher cannot approve a complaint; an accountant cannot
+approve leave.
+
+\textbf{Why it fits:} RBAC was chosen because each role has a different set of permissions. A simpler boolean \texttt{isAdmin} flag would not capture the distinction between a
+teacher (marks attendance, reviews leave) and a batch advisor (can also see batch-level reports). Defining permissions at the role level, not the user level, also makes the system auditable and maintainable.\
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    \item \subsection*{Domain-Driven Design (DDD)}
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The codebase is organized around the core concepts of the university domain rather than around technical layers. The primary features are: \texttt{LeaveApplication}, \texttt{FeeStructure}, \texttt{Complaint}, and \texttt{Announcement}. Each feature owns its own state and implements its own business rules.
+
+For example, the rule that a fee structure may have at most three installments lives inside the \texttt{FeeStructure} feature — not in a controller, not in a UI validation function. The rule that a leave requires teacher approval before reaching
+the HOD is enforced by the \texttt{LeaveApplication} feature's methods, not by an \texttt{if} statement scattered across multiple API routes.
+
+\textbf{Why:} This matters in a university system because the domain has real, non-trivial rules (80\% attendance for exam eligibility, leave dates must fall within the academic calendar, complaint categories are predefined). Putting those rules in the domain layer, close to the data they govern, keeps the codebase honest.
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    \item \subsection*{State Machine Pattern}
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    Several entities in the system have a lifecycle that must follow strict, defined
+    transitions. Allowing arbitrary status updates would produce invalid states — a
+    complaint marked \texttt{RESOLVED} before it was \texttt{ASSIGNED}, or a fee
+    installment moved directly from \texttt{PENDING} to \texttt{OVERDUE} without passing
+    through \texttt{LATE}.
+
+    The three main state machines in this system are:
+
+    \begin{itemize}
+      \item \textbf{Leave Application:} \texttt{BA\_PENDING} $\to$ \texttt{BA\_APPROVED} $\to$
+            \texttt{HOD\_PENDING} $\to$ \texttt{APPROVED} / \texttt{REJECTED}.
+            Only after reaching \texttt{APPROVED} does the admin update attendance
+            records.
+
+      \item \textbf{Complaint:} \texttt{SUBMITTED} $\to$ \texttt{BA\_ACCEPTED} $\to$
+            \texttt{HOD\_PENDING} $\to$
+            \texttt{HOD\_ACCEPTED}, or \texttt{REJECTED} from \texttt{UNDER\_REVIEW}.
+
+      \item \textbf{Fee Installment:} \texttt{PENDING} $\to$ \texttt{LATE} $\to$
+            \texttt{OVERDUE} $\to$ \texttt{PAID}. Transitions are time-driven; the
+            system auto-advances status based on due dates.
+    \end{itemize}
+
+    Each transition is guarded by a permission check. A student cannot advance a leave from
+    \texttt{PENDING\_HOD} to \texttt{APPROVED} — only the HOD can do that. These guards
+    are defined once in the domain layer and enforced on every relevant API route.
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        \item \subsection*{Design Principles}
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\textbf{SOLID Principles}
+
 \begin{itemize}
-    \item Clearly justify the selected design approach.
-    \item Explain why it suits your domain (ML, Web, Mobile, etc.).
-    \item Mention design principles followed (SOLID, DRY, Separation of Concerns).
+  \item \textbf{Single Responsibility.} Each module (Leave, Fee, Complaint,
+        Announcement) handles one domain concern. The attendance update logic
+        lives in its own function, not mixed into the leave approval action.
+
+  \item \textbf{Open/Closed.} New announcement audience types (e.g., targeting a
+        specific department) can be added without modifying existing announcement
+        queries. The audience field accepts structured values that the query layer
+        filters on.
+
 \end{itemize}
+
+\textbf{DRY (Don't Repeat Yourself)}
+
+Role-check middleware, date validation, and PDF generation are each written once and
+reused across all modules. The fee voucher generation function handles both
+individual installment vouchers and full semester vouchers from the same code path,
+parameterized by a flag. Announcement creation and update share the same validation
+logic.
+
+\textbf{Separation of Concerns}
+
+The system separates presentation (React components), application logic (Next.js API
+routes), domain logic (actions), and data access layer (Prisma queries) into
+distinct layers. A change to the fee voucher PDF layout does not touch the database
+schema. A change to the installment state machine logic does not touch the UI. This
+separation is what makes the modular delivery strategy viable — each layer can evolve
+at its own pace.
+
+\end{itemize}
+
+\textbf{Why This Combination Suits a Web-Based Academic Portal:}
+
+A university portal has a small, well-defined user base (students and staff at one
+campus), strict business rules (attendance thresholds, fee deadlines, approval chains),
+and real institutional accountability requirements (who approved what and when).
+
+The monolith keeps the deployment simple for a two-person team. RBAC enforces
+institutional hierarchy without complexity. State machines prevent invalid record states
+in a system where an incorrect attendance record or fee status has real consequences for
+a student. DDD keeps the business rules — which come from university policy, not
+software preference — in one place where they can be read, tested, and updated. The
+append-only log satisfies accountability without requiring specialized infrastructure.
+
+Agile delivery with modular increments let the team build and validate one feature at
+a time with actual users (students and the HOD assistant) rather than delivering
+everything at once and discovering misunderstandings at the end. That feedback loop is
+what shaped the final design — the batch advisor approval step, for instance, was added
+after an early demo revealed that the HOD was being overwhelmed with low-priority leave
+requests.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Software Process Model}
 
-The project follows the \textbf{(Agile / Waterfall / Spiral / Incremental)} model.
+The project follows the \textbf{Incremental-Iterative} model with \textbf{Agile} practices.
 
-\textbf{Guidelines:}
-\begin{itemize}
-    \item Explain why this process model was selected.
-    \item Describe iteration cycles or development phases.
-    \item Explain how testing and validation were integrated.
-\end{itemize}
+% -----------------------------------------------------------
+\subsubsection{Why This Process Model Was Selected}
+% -----------------------------------------------------------
+
+The incremental-iterative model was chosen for three concrete reasons.
+
+First, the system enhances an \textit{existing} portal. The student database and
+authentication layer were already in production. A waterfall approach would have
+required designing all four modules upfront before any of them could be tested against
+real users. That is the wrong sequence when the existing system has undocumented
+constraints that only appear when you start connecting to it.
+
+Second, the requirements were genuinely unstable at project start. Early conversations
+with the HOD assistant and project supervisor revealed that the leave approval chain was not settled. A spiral model would have added risk-analysis overhead on a team of two.
+A waterfall model would have frozen the wrong decision. Short iterations kept the
+decision open until it was understood.
+
+Third, the system has six distinct user roles, each with their own workflow
+expectations. Getting feedback from a student about the fee page tells you nothing
+about what the accountant needs on the same data. Incremental delivery let the team
+demo each module to the relevant role holder before moving on, catching role-specific
+misunderstandings early rather than at the end.
+
+The Agile practices layered on top --- two-week sprints, a shared backlog, end-of-sprint
+demos --- gave that feedback a structure. Without the sprint rhythm, ad-hoc feedback
+from stakeholders tends to arrive late and in bulk, which is expensive to absorb.
+
+% -----------------------------------------------------------
+\subsubsection{Iteration Cycles and Development Phases}
+% -----------------------------------------------------------
+
+Development ran across four sprints, each targeting one module. The sprint boundary
+was also the integration boundary: a module was not considered done until it was
+merged, deployed to the staging environment, and reviewed by at least one stakeholder
+from the relevant role.
+
+Each sprint followed the same internal sequence: requirements review and task
+breakdown on day one; implementation across days two through eight; integration and
+peer review on days nine and ten; demo and retrospective on the final day. Unfinished
+tasks were re-estimated and moved to the next sprint's backlog rather than extending
+the current sprint.
+
+One decision that came directly from this rhythm: the batch advisor approval step in
+the leave workflow was not in the original requirements. It was added after the
+Sprint~3 demo, when the HOD noted that low-priority leave requests were reaching his
+queue without any prior filtering. Adding it required one additional state
+PENDING\_BA and one additional role check --- a change absorbed in a single
+sprint rather than a change request against a frozen specification.
+
+\begin{table}[H]
+\centering
+\caption{Sprint breakdown and deliverables}
+\begin{tabular}{|c|l|p{7cm}|}
+\hline
+\textbf{Sprint} & \textbf{Module} & \textbf{Key Deliverables} \\
+\hline
+1 & Authentication \& Roles &
+ Login, session management, RBAC setup, role-based dashboard routing \\
+\hline
+2 & Fee Installments &
+ Fee structure creation (Accountant), installment view and PDF voucher (Student) \\
+\hline
+3 & Leave Request &
+ Leave submission (Student), two-level approval (Teacher $\to$ HOD), attendance update (Admin) \\
+\hline
+4 & Complaints \& Announcements &
+ Complaint submission and assignment workflow, announcement CRUD with audience targeting \\
+\hline
+\end{tabular}
+\end{table}
+
+
+% -----------------------------------------------------------
+\subsubsection{Testing and Validation Integration}
+% -----------------------------------------------------------
+
+Testing was not a phase at the end. It ran in parallel with each sprint, at three
+levels.
+
+\textbf{Unit testing} covered individual service functions: the leave date validator,
+the installment total checker (installments must sum to the fee structure total), and
+the attendance percentage calculator. These were written alongside the functions they
+test. Any function that enforces a business rule has a corresponding unit test.
+
+\textbf{Integration testing} verified that API routes and database queries worked
+together correctly. Each module's endpoints were tested against a seeded test database
+before the module was marked complete. The test database contained realistic data:
+students across multiple departments, subjects with existing attendance records, and
+fee structures at various installment counts.
+
+\textbf{User acceptance testing (UAT)} happened at the sprint demo. The HOD assistant
+reviewed the leave approval flow. A student representative walked through fee voucher
+generation and complaint submission. The accountant verified installment creation and
+status tracking. Feedback from these sessions was logged directly into the next
+sprint's backlog.
+
+The state machine transitions received particular attention during integration testing.
+Each entity --- leave application, complaint, fee installment --- has a defined set of
+valid transitions. Tests confirmed that attempting an invalid transition (for example,
+a student calling the HOD approval endpoint) returned a \texttt{403 Forbidden} and
+left the record unchanged. The audit log was verified to record every state change
+with the correct actor ID and timestamp.
+
+No module was merged to the main branch without passing all unit and integration tests.
+The CI pipeline ran the test suite on every pull request, keeping the main branch
+deployable at all times --- which mattered when the HOD assistant requested an
+unscheduled demo mid-sprint.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{System Overview}
 
 This section provides a high-level overview of system components and interactions with external entities.
 
-\textbf{Include:}
-\begin{itemize}
-    \item Context Diagram
-    \item External Actors
-    \item Major Subsystems
-\end{itemize}
-
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.9\textwidth]{Figures/Context Diagram.png}
-\caption{Sample Context Diagram of Proposed System}
-\label{fig:usecase}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{Figures/diagrams/system-overview.png}
+  \caption{System overview}
+  \label{fig:system-overview}
 \end{figure}
 
-\textbf{Guidelines:}
-\begin{itemize}
-    \item Show system boundary.
-    \item Include users, admin, third-party APIs, databases, ML engines, payment gateways, etc.
-    \item Keep diagram simple and high-level.
-\end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Architectural Design}
 
 This section describes the high-level architecture of the system.
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.9\textwidth]{Figures/Architecture Diagram.png}
-\caption{Sample System Architecture Diagram of Proposed System}
-\label{fig:usecase}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{Figures/diagrams/arch-diagram.png}
+  \caption{System overview}
+  \label{fig:system-overview}
 \end{figure}
-
-
-\textbf{Guidelines:}
-\begin{itemize}
-    \item Divide system into layers (Presentation, Business Logic, Data Layer).
-    \item For ML projects, include:
-        \begin{itemize}
-            \item Data Preprocessing Module
-            \item Model Training Module
-            \item Prediction Engine
-            \item Evaluation Module
-        \end{itemize}
-    \item For Web/Mobile:
-        \begin{itemize}
-            \item Frontend
-            \item Backend
-            \item API Layer
-            \item Database
-        \end{itemize}
-    \item Explain interaction between components.
-\end{itemize}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -112,144 +293,382 @@ This section presents detailed design models of the system. These models describ
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Activity Diagrams}
 
-Activity diagrams represent the workflow of different modules of the system. Each core module must have a separate activity diagram.
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.67\textwidth]{Figures/Activity Diagram.png}
-\caption{Sample Activity Diagram}
-\label{fig:usecase}
-\end{figure}
-
-\textbf{Guidelines:}
-\begin{itemize}
-    \item Start with user interaction.
-    \item Include decision nodes.
-    \item Show validation checks.
-    \item Include database/model interaction.
-    \item Clearly indicate start and end states.
-\end{itemize}
+Activity diagrams represent the workflow of different modules of the system.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection{Module 1: User Management}
+\subsubsection{Module 1: Student Leave Request:}
 
 \textbf{Description:}
-This diagram illustrates user registration, login, authentication, and profile management processes.
+This diagram how students submit leave request along with validations and approval flow.
 
-\textbf{Figure 4.X: Activity Diagram – User Module}
+\textbf{Start State:} Student is authenticated and navigates to the "Request Leave" page.
+
+\begin{itemize}
+
+    \item \textbf{User Interaction:} Student selects a specific Subject Offering and a Date for the leave request and submits the form.
+    \item \textbf{Validation Check:} System performs a concurrency check to ensure no duplicate request exists for the same studentId, subjectOfferingId, and date.
+    \item \textbf{Database Interaction:} System creates a new record in the Leave Request table with status as BA\_PENDING.
+    \item \textbf{Model Interaction:} BA can login and view pending LR and accept or reject LR.
+    \begin{itemize}
+        \item If accepted status updates to HOD\_PENDING.
+        \item If rejected, LR is discarded. End status to rejected.
+    \end{itemize}
+
+    \item \textbf{User Interaction Review Phase 2:} HOD logs in and views the HOD\_PENDING LRs.
+    \begin{itemize}
+        \item \textbf{Reject:} Update DB status to REJECTED. (End State: Rejected)
+        \item \textbf{Accept:} Update DB status to APPROVED. (End State: Approved)
+    \end{itemize}
+
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{Figures/diagrams/act-lr.png}
+  \caption{Student Leave Request}
+  \label{fig:act-lr}
+\end{figure}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection{Module 2: Core Functional Module}
 
-(Examples depending on domain)
+\subsubsection{Module 2: Student Create Complaint:}
 
-For ML:
-- Data Upload
-- Model Training
-- Prediction Generation
+\textbf{Description:}
+This diagram how students submit complaints along with validations and approval flow.
 
-For Web/Mobile:
-- Order Processing
-- Search System
-- Booking System
+\begin{itemize}
+    \item \textbf{Start State:} Student is authenticated and opens the "File Complaint" form.
+    \item \textbf{Creation \& Validation:} Student submits title, details, and category. After validating required fields, the system creates a Complaint record in the database with status BA\_PENDING, defaulting to the student's department.
+    \item \textbf{BA Decision:} The BA reviews the queue and decides to either Reject or Accept.
+    \item \textbf{HOD Final Action:} The HOD reviews HOD\_PENDING complaints. Decisions include:
+    HOD\_ACCEPTED or HOD\_REJECTED (Final States).
 
-\textbf{Figure 4.X: Activity Diagram – Core Module}
+    \item \textbf{End State:} Status is finalized as HOD\_ACCEPTED, HOD\_REJECTED.
+\end{itemize}
+
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{Figures/diagrams/act-compl.png}
+  \caption{Student Create Complaint}
+  \label{fig:act-compl}
+\end{figure}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection{Module 3: Admin Module}
+\subsubsection{Module 3: HOD/ACC announcemnt}
 
-\textbf{Figure 4.X: Activity Diagram – Admin Operations}
+\textbf{Description:}
+HOD creates for their department students. Accountant can select specific departments to create announcements. Ann can be published and scheduled for specific date.
 
-Include:
-- Monitoring
-- Reports
-- Data Management
-- User Control
+Start State: Author (HOD or Accountant) is authenticated and opens the ``Create Announcement'' form.
+
+\begin{itemize}
+    \item \textbf{User Interaction}: Author enters title, content, announcement type, and sets optional audience filters (Department, Program, Batch, Year).
+
+    \item \textbf{Validation Check}: System validates that required fields are present and that any scheduledFor date is in the future (within a 2-day limit).
+
+    \item \textbf{Decision (Publish Mode)}: Author selects one of three modes:
+    \begin{itemize}
+        \item \textit{Immediate}: Proceed to step 4.
+        \item \textit{Draft}: Skip to Step 5 (Status: DRAFT).
+        \item \textit{Scheduled}: Proceed to step 4 with a target date time.
+    \end{itemize}
+
+    \item \textbf{Database/Model Interaction}: System creates/updates the Ann:
+    \begin{itemize}
+        \item \textit{Immediate}: Status PUBLISHED.
+        \item \textit{Scheduled}: Status SCHEDULED, target date.
+        \item \textbf{Background Interaction}: For SCHEDULED, system queues an Inngest job to wake up at the target date time.
+    \end{itemize}
+
+    \item \textbf{Decision (Inngest Execution)}:
+    \begin{itemize}
+        \item When scheduled For is reached, Inngest wakes up and updates DB status to PUBLISHED and sets published At.
+    \end{itemize}
+
+    \item \textbf{End State (Visibility)}:
+    \begin{itemize}
+        \item \textit{Draft}: Announcement saved in DB; End State: Hidden/Draft.
+        \item \textit{Published}: Announcement is visible to students matching the audience filters; End State: Live.
+    \end{itemize}
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{Figures/diagrams/act-ann.png}
+  \caption{Announcement}
+  \label{fig:act-ann}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\textbf{Figure 4: Fee Installments}
+
+\subsubsection{Module 4: Fee Installment Request}
+\textbf{Description:}
+Students can request to split their due fee into installments. The accountant pre-defines the base installment structure (e.g., 70+30 of 100). A student may further split any due installment, subject to a maximum of 3 total installments. Each request goes through a two-level approval chain: HOD reviews first, then the Accountant confirms.
+
+\textbf{Start State:} Student is authenticated, views the current fee structure and outstanding balance, and opens the ``Request Installment'' form.
+
+\begin{itemize}
+    \item \textbf{User Interaction}: Student enters the amount they wish to pay now against an outstanding installment (e.g., pay 50 of a 70 due amount).
+    \item \textbf{Validation Check}: System validates two conditions:
+    \begin{itemize}
+        \item \textit{Amount Valid}: Requested amount must be greater than zero and less than or equal to the outstanding installment amount.
+        \item \textit{Count Check}: Total number of installment requests for this fee cycle must be fewer than 3. If the limit is reached, the request is blocked and the student is notified.
+    \end{itemize}
+    \item \textbf{Database/Model Interaction}: On passing both checks, a new installment request record is saved with status \texttt{PENDING}, and the remaining balance is split accordingly (e.g., 50 paid now, remaining 20+30 deferred).
+    \item \textbf{Decision (HOD Review)}: HOD is notified and reviews the request.
+    \begin{itemize}
+        \item \textit{Reject}: Request is marked \texttt{REJECTED}; student is notified. End State: Rejected.
+        \item \textit{Approve}: Request is forwarded to the Accountant.
+    \end{itemize}
+    \item \textbf{Decision (Accountant Review)}: Accountant reviews the HOD-approved request.
+    \begin{itemize}
+        \item \textit{Reject}: Request is marked \texttt{REJECTED}; student is notified. End State: Rejected.
+        \item \textit{Approve}: Request is marked \texttt{APPROVED} and balance records are updated.
+    \end{itemize}
+    \item \textbf{Post-Approval}: System generates a fee voucher for the approved amount and notifies the student.
+    \item \textbf{Decision (Balance Check)}: System checks whether the remaining balance is zero.
+    \begin{itemize}
+        \item \textit{Balance Remaining}: Student may submit another installment request (loop back to step 1), provided the count limit has not been reached.
+        \item \textit{Balance Zero}: No further requests possible. End State: Account fully settled.
+    \end{itemize}
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{Figures/diagrams/act-fee.png}
+  \caption{Fee Installments}
+  \label{fig:act-fee}
+\end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Class Diagram}
 
 The class diagram shows the static structure of the system.
 
-\textbf{Figure 4.X: Class Diagram}
+\subsubsection{User Roles and Permissions Overview}
 
-\textbf{Guidelines:}
+The system implements a Role-Based Access Control (RBAC) model with a central User entity extended by role-specific profiles.
+
+Inheritance and composition:
 \begin{itemize}
-    \item Include classes, attributes, and methods.
-    \item Show relationships (Association, Aggregation, Inheritance).
-    \item For ML systems include:
-        \begin{itemize}
-            \item Dataset Class
-            \item Model Class
-            \item Evaluation Class
-        \end{itemize}
-    \item For Web/Mobile:
-        \begin{itemize}
-            \item User
-            \item Admin
-            \item Order/Transaction
-            \item Service
-        \end{itemize}
+    \item Every specialized role (Student, Professor, BA, HOD, Accountant) is linked to exactly one \texttt{User} (1-to-0..1 relationship).
+    \item A Professor can be promoted to BA (additional 1-to-0..1 link).
 \end{itemize}
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.88\textwidth]{Figures/Class Diagram.png}
-\caption{Sample Class Diagram}
-\label{fig:usecase}
+This structure enables fine-grained access control while maintaining a single authentication entry point and allowing role escalation within the same department.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{Figures/diagrams/class/class-user-role.png}
+  \caption{Class diagram - user roles}
+  \label{fig:class-user-role}
 \end{figure}
 
-Include explanation after diagram describing:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Leave Request and Attendance Synchronization}
+
+The leave management module enables students to request absences with automatic impact on attendance records.
+
+A \texttt{Student} submits a \texttt{LeaveRequest} for a specific date, providing a reason title, details, and linking it to the relevant \texttt{SubjectOffering} (course instance defined by semester, year, and department).
+
+The request follows departmental approval workflow:
+- First reviewed and forwarded by the \texttt{BA} of the student's department.
+- Then finally approved or rejected by the \texttt{HOD}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{Figures/diagrams/class/class-lr.png}
+  \caption{Class diagram - Leave requests}
+  \label{fig:class-lr}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Complaint Submission and Resolution Process}
+
+The complaint system provides a structured mechanism for students to report issues, with departmental review, reassignment capability, and complete action auditing.
+
+A \texttt{Student} submits a \texttt{Complaint} specifying the category, title, target department, and description. The complaint enters a lifecycle with status tracking.
+
+Tracking and transparency features:
 \begin{itemize}
-    \item Key classes
-    \item Relationships
-    \item Responsibilities
+    \item Every review, status transition, or remark is logged in \texttt{ComplaintReview} entries.
 \end{itemize}
+
+Key entities:
+\begin{itemize}
+    \item \textbf{Student} files complaints tied to their registration number and department.
+    \item \textbf{Complaint} holds core data (category, title, status, target department, BA/HOD remarks) and controls the submission–review–resolution workflow.
+    \item \textbf{ComplaintReview} maintains an immutable history of all actions performed on a complaint.
+    \item \textbf{BatchAdvisor} conducts initial departmental review.
+    \item \textbf{Hod} holds final decision authority (resolve, reject, reassign).
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{Figures/diagrams/class/class-compl.png}
+  \caption{Class diagram - Complaint}
+  \label{fig:class-compl}
+\end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Sequence Diagrams}
 
 Sequence diagrams show interaction between objects over time.
 
-\textbf{Guidelines:}
-\begin{itemize}
-    \item Include actor on left.
-    \item Show request-response flow.
-    \item Include system components.
-    \item Show database/API interaction.
-\end{itemize}
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Sequence Diagram – User Login}
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.8\textwidth]{Figures/Sequence Diagram 2.png}
-\caption{Sample Sequence Diagram}
-\label{fig:usecase}
+The authentication process follows a standard credential-based login with session/token management.
+
+\begin{itemize}
+    \item User submits email/password via the login form.
+    \item Next.js form forwards credentials to the better-auth auth service.
+    \item Auth service verifies credentials in the database.
+    \item On success:
+    \begin{itemize}
+        \item A secure session/token is created and stored.
+        \item Token is returned to Next.js.
+        \item Next.js sets an HttpOnly cookie and redirects to the user dashboard.
+    \end{itemize}
+    \item On failure:
+    \begin{itemize}
+        \item 401 Unauthorized response is sent back.
+        \item Browser displays error message (invalid credentials).
+    \end{itemize}
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{Figures/diagrams/seq/seq-login.png}
+  \caption{Sequence diagram - Login}
+  \label{fig:seq-login}
 \end{figure}
 
-Describe:
-- User sends credentials
-- System validates
-- Database checks
-- Response returned
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection{Sequence Diagram – Core Operation}
 
-Examples:
+\subsubsection{Sequence Diagram – Leave Request and Approval Flow}
+The leave request process follows a multi-stage approval workflow involving the student, BA, HOD, and admin.
 
-For ML:
-- Upload Dataset → Preprocess → Load Model → Predict → Display Result
+\begin{itemize}
+    \item Student submits a leave request through the portal.
 
-For Web:
-- Add to Cart → Checkout → Payment Gateway → Confirmation
+    \item Batch Advisor reviews the pending request and can accept or reject. If accepted, forwarded to HOD for further review.
+    \item HOD reviews the forwarded request by BA.
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.8\textwidth]{Figures/Sequence Diagram.png}
-\caption{Sample Sequence Diagram - 2}
-\label{fig:usecase}
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{Figures/diagrams/seq/seq-LR.png}
+  \caption{Sequence diagram - Student leave request}
+  \label{fig:seq-login}
 \end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Sequence Diagram – Complaint Submission and Resolution Flow}
+The complaint process follows a multi-stage review workflow involving the student, batch advisor, and HOD, with support for revision requests, rejection, and reassignment.
+
+\begin{itemize}
+    \item Student submits a complaint through the portal, providing the category and details.
+    \item Portal acknowledges receipt and sets the complaint status to \texttt{BA\_PENDING}.
+
+    \item Batch Advisor reviews the complaint:
+    \begin{itemize}
+        \item On requesting a revision:
+        \begin{itemize}
+            \item Batch Advisor requests a revision with remarks via the portal. The complaint is not rejected at this stage.
+            \item Portal notifies the student that a revision has been requested.
+            \item Student updates the complaint and resubmits through the portal.
+            \item Portal notifies the Batch Advisor that the complaint has been resubmitted for review.
+        \end{itemize}
+        \item On rejection:
+        \begin{itemize}
+            \item Batch Advisor rejects the complaint with remarks on the portal.
+            \item Portal notifies the student of the rejection.
+        \end{itemize}
+        \item On acceptance:
+        \begin{itemize}
+            \item Batch Advisor forwards the complaint to the HOD via the portal.
+            \item Portal notifies the student that the complaint has been forwarded to the HOD.
+        \end{itemize}
+    \end{itemize}
+
+    \item HOD reviews the forwarded complaint:
+    \begin{itemize}
+        \item On rejection:
+        \begin{itemize}
+            \item HOD rejects the complaint with remarks on the portal.
+            \item Portal notifies the student of the rejection.
+        \end{itemize}
+        \item On resolution:
+        \begin{itemize}
+            \item HOD marks the complaint as resolved on the portal.
+            \item Portal notifies the student that the complaint has been resolved.
+        \end{itemize}
+        \item On reassignment:
+        \begin{itemize}
+            \item HOD reassigns the complaint to another department via the portal.
+            \item Portal notifies the student that the complaint has been reassigned.
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{Figures/diagrams/seq/seq-compl.png}
+  \caption{Sequence diagram - Student complaint}
+  \label{fig:seq-login}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection{Sequence Diagram – Announcement Creation and Scheduling}
+The announcement system supports immediate publishing, draft saving, and scheduled publishing via a background job scheduler. Authors with the HOD or Accountant role interact with the portal to create and manage announcements.
+
+\begin{itemize}
+    \item Author creates an announcement on the portal by providing a title, content, and target audience.
+    \item Portal verifies the author's profile against the database before proceeding.
+    \item Database confirms the profile, allowing the operation to continue.
+
+    \item Depending on the author's chosen publish option:
+    \begin{itemize}
+        \item On immediate publishing:
+        \begin{itemize}
+            \item Portal inserts the announcement into the database with status \texttt{PUBLISHED}.
+            \item Portal confirms to the author that the announcement is live.
+        \end{itemize}
+        \item On saving as draft:
+        \begin{itemize}
+            \item Portal inserts the announcement into the database with status \texttt{DRAFT}.
+            \item Portal confirms to the author that the draft has been saved.
+        \end{itemize}
+        \item On scheduling for later:
+        \begin{itemize}
+            \item Portal inserts the announcement into the database with status \texttt{SCHEDULED}.
+            \item Portal emits a scheduled event to the Inngest background scheduler.
+            \item Portal confirms to the author that the announcement has been scheduled.
+            \item Inngest sleeps until the specified \texttt{scheduledFor} datetime is reached.
+            \item Once triggered, Inngest updates the announcement status in the database to \texttt{PUBLISHED}.
+        \end{itemize}
+    \end{itemize}
+
+    \item Author views the announcement feed on the portal.
+    \item Portal queries the database for all \texttt{PUBLISHED} announcements filtered by the author's audience scope.
+    \item Database returns the matching announcement list to the portal.
+    \item Portal renders the feed and displays it to the author.
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{Figures/diagrams/seq/seq-ann.png}
+  \caption{Sequence diagram - Announcement}
+  \label{fig:seq-login}
+\end{figure}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{State Transition Diagrams}
 
@@ -278,7 +697,7 @@ State diagrams show how system or object changes states over time.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Data Flow Diagrams}
 
-Data Flow Diagrams (DFD) describe how data moves within the system. 
+Data Flow Diagrams (DFD) describe how data moves within the system.
 Different levels of DFD provide increasing detail.
 
 \subsection{Level 1 Data Flow Diagram}
@@ -288,7 +707,7 @@ Different levels of DFD provide increasing detail.
 \includegraphics[width=0.9\textwidth]{Figures/DFD Sample.png}
 \caption{Sample Level 1 DFD}
 \label{fig:usecase}
-\end{figure}  
+\end{figure}
 
 \textbf{Description:}
 Level 1 DFD decomposes the main system into major sub-processes.
@@ -313,14 +732,14 @@ Level 1 DFD decomposes the main system into major sub-processes.
 \subsection{Level 2 Data Flow Diagram}
 
 \textbf{Description:}
-Level 2 DFD further decomposes one complex module from Level 1.  
+Level 2 DFD further decomposes one complex module from Level 1.
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.9\textwidth]{Figures/DFD Sample 2.png}
 \caption{Sample Level 2 DFD}
 \label{fig:usecase}
-\end{figure} 
+\end{figure}
 
 \textbf{Examples (Domain-based):}
 
@@ -368,9 +787,9 @@ This section describes how data is structured, stored, and managed.
 \includegraphics[width=0.9\textwidth]{Figures/ER Diagram.png}
 \caption{Sample Entity Relation Diagram}
 \label{fig:usecase}
-\end{figure} 
+\end{figure}
 
-The Entity Relationship Diagram (ERD) represents the logical database structure of the system. 
+The Entity Relationship Diagram (ERD) represents the logical database structure of the system.
 
 \textbf{Guidelines:}
 \begin{itemize}
@@ -409,7 +828,7 @@ Explain:
 \includegraphics[width=0.9\textwidth]{Figures/Database Diagram.png}
 \caption{Sample Database Diagram}
 \label{fig:usecase}
-\end{figure} 
+\end{figure}
 
 The Database Schema Diagram represents the physical database implementation structure.
 
@@ -606,24 +1025,24 @@ The database design incorporates scalability mechanisms to support future growth
 \section{Chapter Summary}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-This chapter presented the comprehensive software design of the proposed system. 
-It translated the functional and non-functional requirements identified earlier 
+This chapter presented the comprehensive software design of the proposed system.
+It translated the functional and non-functional requirements identified earlier
 into structured architectural, behavioral, and data models.
 
-The design methodology and selected software process model were justified to 
-ensure systematic development and maintainability. A high-level system overview 
-was provided through the context diagram and architectural representation, 
+The design methodology and selected software process model were justified to
+ensure systematic development and maintainability. A high-level system overview
+was provided through the context diagram and architectural representation,
 clearly illustrating component interactions and subsystem boundaries.
 
-Detailed UML models including activity diagrams, class diagrams, sequence diagrams, 
-and state transition diagrams were developed to describe system behavior and structure. 
-Additionally, data flow diagrams were constructed to represent internal data movement 
+Detailed UML models including activity diagrams, class diagrams, sequence diagrams,
+and state transition diagrams were developed to describe system behavior and structure.
+Additionally, data flow diagrams were constructed to represent internal data movement
 across different system layers.
 
-The chapter further elaborated the database design through Entity Relationship Diagrams, 
-database schema diagrams, and data dictionaries to ensure data integrity, scalability, 
-and security. Relationships between entities and normalization considerations were 
+The chapter further elaborated the database design through Entity Relationship Diagrams,
+database schema diagrams, and data dictionaries to ensure data integrity, scalability,
+and security. Relationships between entities and normalization considerations were
 also addressed.
 
-Overall, this chapter establishes a clear technical blueprint that guides the 
+Overall, this chapter establishes a clear technical blueprint that guides the
 implementation phase discussed in the next chapter.

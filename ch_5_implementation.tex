@@ -4,8 +4,8 @@
 
 \chapter{Implementation}
 
-This chapter describes the practical implementation of the proposed system. 
-It explains how the designed architecture was translated into working modules, 
+This chapter describes the practical implementation of the proposed system.
+It explains how the designed architecture was translated into working modules,
 algorithms, user interfaces, and deployment components.
 
 % -------------------------------------------------
@@ -14,7 +14,7 @@ algorithms, user interfaces, and deployment components.
 
 \section{Development Environment}
 
-This section describes the software and hardware environment used 
+This section describes the software and hardware environment used
 for system implementation.
 
 \section{Development Environment}
@@ -37,7 +37,7 @@ This section describes the software and hardware environment used for system imp
 The system is developed and deployed in a web-based environment with no specific hardware dependencies beyond standard configurations.
 
 \begin{itemize}
-\item \textbf{Client-side:} Standard personal computers with input devices (keyboard, mouse) and Firefox web browsers 
+\item \textbf{Client-side:} Standard personal computers with input devices (keyboard, mouse) and Firefox web browsers
 \item \textbf{Hardware specifications:} 16 GB RAM, Intel Core i5 or equivalent processor, 256 GB HDD storage (no GPU required as the project is not ML-based)
 \end{itemize}
 
@@ -60,11 +60,11 @@ For each module:
 
 \subsection{Module 1: Registration}
 
-\textbf{Purpose:} 
+\textbf{Purpose:}
 To register user in the system.
 
 \textbf{Functionality:}
-Portal shows register form with inputs for name, email and password. Page shows errors as user types in inputs like valid email, name with min character length 3 and password with min 8 characters. 
+Portal shows register form with inputs for name, email and password. Page shows errors as user types in inputs like valid email, name with min character length 3 and password with min 8 characters.
 
 \textbf{Important functions:}
 
@@ -131,13 +131,13 @@ Enrollment/subjects.
 
 \subsection{Module 4: students announcement module:}
 \textbf{Purpose:}
-Displays department-targeted announcements from HODs/accountant or admin to students, with smart filtering based on the student's department, program. 
+Displays department-targeted announcements from HODs/accountant or admin to students, with smart filtering based on the student's department, program.
 
 \textbf{Functionality:}
 \begin{itemize}
-    \item \textbf{Filtered Feed:} Shows only announcements matching the student's department / program, plus broadcasts (\verb|null| targets) 
+    \item \textbf{Filtered Feed:} Shows only announcements matching the student's department / program, plus broadcasts (\verb|null| targets)
     \item \textbf{Pin support:} Pinned announcements float to the top, newly created on the top.
-    \item \textbf{Details view:} Full announcement page with image, content, author, and publish date 
+    \item \textbf{Details view:} Full announcement page with image, content, author, and publish date
     \item \textbf{Responsice Sidebar:} Right sidebar shows a preview list on student layout, which shows up in desktop screens.
     \item \textbf{Suspense + Skeletons:} Both list and detail views stream in with loading skeletons.
 \end{itemize}
@@ -145,13 +145,13 @@ Displays department-targeted announcements from HODs/accountant or admin to stud
 \textbf{Important functions:}
 
 \begin{itemize}
-\item \textbf{studentGetAllAnnouncements:} Checks resolves the student's department/program from their registration number, builds a scoped Prisma \href{vscode-file://vscode-app/d:/Programs/Microsoft\%20VS\%20Code/0870c2a0c7/resources/app/out/vs/code/electron-browser/workbench/workbench.html}{where} clause, orders by isPinned desc and createdAt desc.
+\item \textbf{studentGetAllAnnouncements:} Checks resolves the student's department/program from their registration number, builds a scoped Prisma clause, orders by isPinned desc and createdAt desc.
     \item \textbf{studentGetAnnouncemntById:} fetches a single announcement for the detail page.
     \item Announcement details page: async RSC showing full content + optional image display.
     \item Right sidebar: wraps in Suspense on every student layout page
- 
+
 \end{itemize}
- 
+
 
 \textbf{Integration with other modules:}
 \begin{itemize}
@@ -247,7 +247,7 @@ The HOD Announcements module gives HODs to create announcements for their respec
 
 \section{Algorithm Implementation}
 
-This section explains the implementation of the core prediction algorithm used in the system. 
+This section explains the implementation of the core prediction algorithm used in the system.
 
 \subsection{Algorithm 1: User Registration}
 
@@ -263,17 +263,17 @@ The algorithm securely processes new user registrations by validating input cred
 \Function{RegisterUser}{$name, email, password$}
     \State \Comment{Construct input object}
     \State $input\_data \gets \{name, email, password\}$
-    
+
     \State \Comment{Validate input against schema}
     \State $is\_valid \gets ValidateSchema(input\_data)$
-    
+
     \If{\textbf{not} $is\_valid$}
         \State \Return $\{status: \text{"error"}, message: \text{"Invalid form data"}\}$
     \EndIf
-    
+
     \State \Comment{Attempt to create user via Auth API}
     \State $result \gets Call(AuthAPI.signUpEmail(name, email, password))$
-    
+
     \If{$result.success$}
         \State \Return $\{status: \text{"success"}, message: \text{"Signup successful"}\}$
     \Else
@@ -281,7 +281,7 @@ The algorithm securely processes new user registrations by validating input cred
         \State $error\_msg \gets ExtractErrorMessage(result.error)$
         \State \Return $\{status: \text{"error"}, message: error\_msg\}$
     \EndIf
-    
+
 \EndFunction
 
 \end{algorithmic}
@@ -304,17 +304,17 @@ The algorithm captures a new password from the user alongside a secure token fro
 \Function{ResetPassword}{$new\_password, confirm\_password, token$}
     \State \Comment{Construct form data}
     \State $form\_data \gets \{password: new\_password, confirmPassword: confirm\_password\}$
-    
+
     \State \Comment{Validate against schema: matching passwords, min 8 chars}
     \State $is\_valid \gets ValidateSchema(form\_data)$
-    
+
     \If{\textbf{not} $is\_valid$}
         \State \Return $DisplayValidationErrors()$
     \EndIf
-    
+
     \State \Comment{Attempt password reset via Auth Client}
     \State $result \gets Call(authClient.resetPassword(new\_password, token))$
-    
+
     \If{$result.success$}
         \State $ShowToast(\text{"Password reset successfully."})$
         \State $RedirectTo(\text{"/login"})$
@@ -324,7 +324,7 @@ The algorithm captures a new password from the user alongside a secure token fro
         \State $ShowToast(result.error.message)$
         \State \Return \text{Failure}
     \EndIf
-    
+
 \EndFunction
 
 \end{algorithmic}
@@ -350,35 +350,35 @@ The algorithm handles the creation of a new grievance or query by a student. It 
 \Function{CreateComplaint}{$input\_data$}
     \State \Comment{Verify active session}
     \State $session \gets RequireSession()$
-    
+
     \State \Comment{Check specific permissions}
     \State $has\_permission \gets RequirePermission(\text{"complaints"}, \text{["create"]})$
-    
+
     \If{\textbf{not} $has\_permission$}
         \State \Return $\{status: \text{"error"}, message: \text{"You are not allowed to create complaints"}\}$
     \EndIf
-    
+
     \State \Comment{Fetch student record to get ID and department}
     \State $student \gets Database.Student.Find(userId: session.user.id)$
-    
+
     \If{$student$ \textbf{is} $null$}
         \State \Return $\{status: \text{"error"}, message: \text{"Not student"}\}$
     \EndIf
-    
+
     \State \Comment{Validate complaint input schema}
     \State $is\_valid \gets ValidateSchema(input\_data)$
-    
+
     \If{\textbf{not} $is\_valid$}
         \State \Return $\{status: \text{"error"}, message: \text{"Invalid data"}\}$
     \EndIf
-    
+
     \State \Comment{Persist complaint attached to the student's department}
     \State $CreationResult \gets Database.Complaint.Create($
     \State \quad $studentId: student.id,$
     \State \quad $targetDepartment: student.department,$
     \State \quad $...input\_data$
     \State $)$
-    
+
     \If{$CreationResult.success$}
         \State \Return $\{status: \text{"success"}, message: \text{"Complaint created successfully"}\}$
     \Else
@@ -386,7 +386,7 @@ The algorithm handles the creation of a new grievance or query by a student. It 
         \State $error\_msg \gets ExtractErrorMessage(CreationResult.error)$
         \State \Return $\{status: \text{"error"}, message: error\_msg\}$
     \EndIf
-    
+
 \EndFunction
 
 \end{algorithmic}
@@ -410,46 +410,46 @@ The algorithm captures a student's request for leave for a specific lecture sess
 \State \textbf{Output:} $response\_object$
 
 \Function{SubmitLeaveRequest}{$input\_data, student\_id$}
-    
+
     \State \Comment{Verify student has permission}
     \State $has\_permission \gets RequirePermission(\text{"leaveRequest"}, \text{["create"]})$
-    
+
     \If{\textbf{not} $has\_permission$}
         \State \Return $\{status: \text{"error"}, message: \text{"You are not allowed to create leave requests"}\}$
     \EndIf
-    
+
     \State \Comment{Validate input schema criteria (min lengths, valid date)}
     \State $is\_valid \gets ValidateSchema(input\_data)$
-    
+
     \If{\textbf{not} $is\_valid$}
         \State \Return $\{status: \text{"error"}, message: \text{"Invalid data"}\}$
     \EndIf
-    
+
     \State \Comment{Fetch the specific subject offering ID}
     \State $offering \gets Database.SubjectOffering.Find(subjectId: input\_data.subjectId)$
-    
+
     \If{$offering$ \textbf{is} $null$}
         \State \Return $\{status: \text{"error"}, message: \text{"Subject offering not found"}\}$
     \EndIf
-    
+
     \State \Comment{Verify the student is actually enrolled in this offering}
     \State $enrollment \gets Database.Enrollment.Find(studentId: student\_id, offeringId: offering.id)$
-    
+
     \If{$enrollment$ \textbf{is} $null$}
         \State \Return $\{status: \text{"error"}, message: \text{"You are not enrolled in this subject"}\}$
     \EndIf
-    
+
     \State \Comment{Prevent duplicate leave requests for the same date and offering}
     \State $existing\_request \gets Database.LeaveRequest.Find($
     \State \quad $studentId: student\_id,$
     \State \quad $offeringId: offering.id,$
     \State \quad $date: input\_data.date$
     \State $)$
-    
+
     \If{$existing\_request$ \textbf{is not} $null$}
         \State \Return $\{status: \text{"error"}, message: \text{"A leave request for this subject and date already exists"}\}$
     \EndIf
-    
+
     \State $CreationResult \gets Database.LeaveRequest.Create($
     \State \quad $studentId: student\_id,$
     \State \quad $date: input\_data.date,$
@@ -458,13 +458,13 @@ The algorithm captures a student's request for leave for a specific lecture sess
     \State \quad $imageKey: input\_data.imageKey,$
     \State \quad $offeringId: offering.id$
     \State $)$
-    
+
     \If{$CreationResult.success$}
         \State \Return $\{status: \text{"success"}, message: \text{"Leave request created successfully."}\}$
     \Else
         \State \Return $\{status: \text{"error"}, message: \text{"Failed to send leave request."}\}$
     \EndIf
-    
+
 \EndFunction
 
 \end{algorithmic}
@@ -488,42 +488,42 @@ This algorithm authenticates an HOD and validates their submission to create ann
 \State \textbf{Output:} $response\_object$
 
 \Function{CreateHODAnnouncement}{$session, input\_data$}
-    
+
     \State \Comment{Verify HOD authentication and authorization levels}
     \State $has\_permission \gets RequirePermission(\text{"announcements"}, \text{["create"]})$
-    
+
     \If{\textbf{not} $has\_permission$}
         \State \Return $\{status: \text{"error"}, message: \text{"You are not allowed to create announcements."}\}$
     \EndIf
-    
+
     \State \Comment{Validate structural integrity of incoming data payload}
     \State $is\_valid \gets ValidateSchema(input\_data)$
-    
+
     \If{\textbf{not} $is\_valid$}
         \State \Return $\{status: \text{"error"}, message: \text{"Invalid form data."}\}$
     \EndIf
-    
+
     \State \Comment{Resolve HOD profile to identify specific target department}
     \State $hod \gets Database.HOD.Find(userId: session.user.id)$
-    
+
     \If{$hod$ \textbf{is} $null$}
         \State \Return $\{status: \text{"error"}, message: \text{"HOD profile not found."}\}$
     \EndIf
-    
+
     \State \Comment{Validate time boundary limits for scheduling (Max 48 hours)}
     \If{$input\_data.scheduledFor$ \textbf{is not} $null$}
         \State $schedule\_date \gets input\_data.scheduledFor$
-        
+
         \If{$schedule\_date < CurrentDate()$}
             \State \Return $\{status: \text{"error"}, message: \text{"Scheduled time must be in the future."}\}$
         \EndIf
-        
+
         \State $max\_date \gets CurrentDate() + 2 \text{ days}$
         \If{$schedule\_date > max\_date$}
             \State \Return $\{status: \text{"error"}, message: \text{"Announcements can only be scheduled up to 2 days from now."}\}$
         \EndIf
     \EndIf
-    
+
     \State \Comment{Create database entity referencing the resolved department}
     \State $CreationResult \gets Database.Announcement.Create($
     \State \quad $targetDepartment: hod.department,$
@@ -531,20 +531,20 @@ This algorithm authenticates an HOD and validates their submission to create ann
     \State \quad $status: input\_data.scheduledFor ? \text{"SCHEDULED"} : input\_data.status,$
     \State \quad $...input\_data$
     \State $)$
-    
+
     \If{\textbf{not} $CreationResult.success$}
         \State $error\_msg \gets ExtractErrorMessage(CreationResult.error)$
         \State \Return $\{status: \text{"error"}, message: error\_msg\}$
     \EndIf
-    
+
     \State \Comment{Handle specialized asynchronous dispatch for delayed publication}
     \If{$input\_data.scheduledFor$ \textbf{is not} $null$}
         \State $Inngest.Send(\text{"announcement/scheduled"}, CreationResult.id, input\_data.scheduledFor)$
         \State \Return $\{status: \text{"success"}, message: \text{"Announcement scheduled for [...]"}\}$
     \EndIf
-    
+
     \State \Return $\{status: \text{"success"}, message: \text{"Announcement created successfully."}\}$
-    
+
 \EndFunction
 
 \end{algorithmic}
@@ -568,35 +568,35 @@ This algorithm represents a durable, serverless background job managed by Innges
 \State \textbf{Output:} $confirmation\_message$
 
 \Function{HandleAnnouncementSchedule}{$event\_data, step$}
-    
+
     \State \Comment{Extract values from standard event payload}
     \State $announcement\_id \gets event\_data.announcementId$
     \State $target\_date \gets (event\_data.scheduleDate)$
-    
+
     \State \Comment{Validate the parsed date to prevent runtime panics}
     \If{\textbf{not} $IsValidDate(target\_date)$}
         \State \textbf{throw} $\text{"Invalid schedule date provided for announcement."}$
     \EndIf
-    
+
     \State \Comment{Durable execution: Pause the function state until the exactly specified time}
     \State $step.SleepUntil(target\_date)$
-    
+
     \State \Comment{Resume execution: Isolate database mutation in a retriable step}
     \State $step.Run(\text{"publish-announcement"},$
     \State \quad \Function{Publish}{}
     \State \quad \quad $Database.Announcement.Update($
     \State \quad \quad \quad $where: \{ id: announcement\_id \},$
-    \State \quad \quad \quad $data: \{$ 
-    \State \quad \quad \quad \quad $status: \text{"PUBLISHED"},$ 
-    \State \quad \quad \quad \quad $publishedAt: CurrentDate(),$ 
+    \State \quad \quad \quad $data: \{$
+    \State \quad \quad \quad \quad $status: \text{"PUBLISHED"},$
+    \State \quad \quad \quad \quad $publishedAt: CurrentDate(),$
     \State \quad \quad \quad \quad $scheduledFor: null$
     \State \quad \quad \quad $\}$
     \State \quad \quad $)$
     \State \quad \EndFunction
     \State $)$
-    
+
     \State \Return $\{ announcementId: announcement\_id, message: \text{"Announcement published!"} \}$
-    
+
 \EndFunction
 
 \end{algorithmic}
@@ -619,33 +619,33 @@ This algorithm serves as a wrapper around the Nodemailer transport service. Its 
 \State \textbf{Output:} $is\_successful$
 
 \Function{SendEmail}{$to, subject, meta$}
-    
+
     \State \Comment{Development Guard: Intercept emails to prevent external spam}
     \If{$Environment.NODE\_ENV \neq \text{"production"}$}
         \State $Console.Log(\text{"[DEV EMAIL]"}, \{to, subject, meta\})$
         \State \Return $\{ success: \textbf{true} \}$
     \EndIf
-    
+
     \State \Comment{Construct secure HTML email body using pre-defined styles}
     \State $html\_body \gets \text{GenerateHTMLTemplate}(subject, meta.description, meta.link)$
-    
+
     \State $mail\_options \gets \{$
     \State \quad $from: Environment.NODEMAILER\_USER,$
     \State \quad $to: to,$
     \State \quad $subject: subject,$
     \State \quad $html: html\_body$
     \State $\}$
-    
+
     \State \Comment{Attempt transmission via Nodemailer Transport (Gmail SMTP)}
     \State $TransmissionResult \gets Call(transporter.sendMail(mail\_options))$
-    
+
     \If{$TransmissionResult.success$}
         \State \Return $\{ success: \textbf{true} \}$
     \Else
         \State \Comment{Swallow raw transport errors to prevent internal leakage}
         \State \Return $\{ success: \textbf{false} \}$
     \EndIf
-    
+
 \EndFunction
 
 \end{algorithmic}
@@ -668,39 +668,39 @@ This algorithm maps the initial stage of a student's complaints flow. When a new
 \State \textbf{Output:} $updated\_complaint$
 
 \Function{ReviewComplaintAsBatchAdvisor}{$session, complaint\_id, is\_accepted, remarks$}
-    
+
     \State \Comment{Authorize Batch Advisor access}
     \State $has\_permission \gets RequirePermission(\text{"complaints"}, \text{["update"]})$
-    
+
     \If{\textbf{not} $has\_permission$}
         \State \Return $\{status: \text{"error"}, message: \text{"Unauthorized access"}\}$
     \EndIf
-    
+
     \State \Comment{Identify the advisor's specific department scope}
     \State $advisor \gets Database.BatchAdvisor.Find(userId: session.user.id)$
-    
+
     \If{$advisor$ \textbf{is} $null$}
         \State \Return $\{status: \text{"error"}, message: \text{"Advisor profile not found."}\}$
     \EndIf
-    
+
     \State \Comment{Query the specific complaint within the advisor's department queue}
     \State $complaint \gets Database.Complaint.Find($
     \State \quad $id: complaint\_id,$
     \State \quad $targetDepartment: advisor.department,$
     \State \quad $status: \text{"BA\_PENDING"}$
     \State $)$
-    
+
     \If{$complaint$ \textbf{is} $null$}
         \State \Return $\{status: \text{"error"}, message: \text{"Complaint not found or already processed."}\}$
     \EndIf
-    
+
     \State \Comment{Determine escalation or termination based on advisor action}
     \If{$is\_accepted$}
         \State $new\_status \gets \text{"HOD\_PENDING"}$
     \Else
         \State $new\_status \gets \text{"BA\_REJECTED"}$
     \EndIf
-    
+
     \State \Comment{Log the decision and escalate}
     \State $UpdateResult \gets Database.Complaint.Update($
     \State \quad $where: \{ id: complaint.id \},$
@@ -710,13 +710,13 @@ This algorithm maps the initial stage of a student's complaints flow. When a new
     \State \quad \quad $baReviewedAt: CurrentDate()$
     \State \quad $\}$
     \State $)$
-    
+
     \If{$UpdateResult.success$}
         \State \Return $\{status: \text{"success"}, message: \text{"Action recorded successfully."}\}$
     \Else
         \State \Return $\{status: \text{"error"}, message: \text{"Database update failed."}\}$
     \EndIf
-    
+
 \EndFunction
 
 \end{algorithmic}
@@ -739,27 +739,27 @@ This algorithm maps the conclusive stage of a student's complaint's status. When
 \State \textbf{Output:} $updated\_complaint$
 
 \Function{ReviewComplaintAsHOD}{$id, is\_accepted, is\_reassigned$}
-    
+
     \State \Comment{Query specific escalated complaint}
     \State $complaint \gets Database.Complaint.Find(id, \text{"HOD\_PENDING"})$
-    
+
     \If{$is\_reassigned$}
         \State \Comment{Handle Reassignments}
         \State $Database.Complaint.Update(id, \{status: \text{"BA\_PENDING"}, dept: new\_dept\})$
         \State \Return $\text{"Complaint reassigned."}$
     \EndIf
-    
+
     \State \Comment{Determine escalation or termination}
     \If{$is\_accepted$}
         \State $new\_status \gets \text{"HOD\_ACCEPTED"}$
     \Else
         \State $new\_status \gets \text{"HOD\_REJECTED"}$
     \EndIf
-    
+
     \State \Comment{Log the final decision}
     \State $Database.Complaint.Update(id, \{status: new\_status\})$
     \State \Return $\text{"Final action recorded."}$
-    
+
 \EndFunction
 
 \end{algorithmic}
@@ -783,14 +783,14 @@ This algorithm maps the admin process of appointing a new BA. Because Batch Advi
 \State \textbf{Output:} $success\_status$
 
 \Function{AppointBatchAdvisor}{$userId, department$}
-    
+
     \State \Comment{Step 1: Verify Administrative Access}
     \State $has\_permission \gets RequirePermission(\text{"user"}, \text{["set-role"]})$
-    
+
     \If{\textbf{not} $has\_permission$}
         \State \Return $\{status: \text{"error"}, message: \text{"Unauthorized access"}\}$
     \EndIf
-    
+
     \State \Comment{Step 2: Ensure User is a Professor}
     \State $user \gets Database.User.Find(userId)$
     \If{$user.role \neq \text{"PROFESSOR"}$}
@@ -801,23 +801,23 @@ This algorithm maps the admin process of appointing a new BA. Because Batch Advi
         \State \quad $DeleteOtherProfiles(userId)$
         \State $)$
     \EndIf
-    
+
     \State \Comment{Step 3: Assign Department to Professor Profile}
     \State $professor \gets Database.Professor.Find(userId)$
     \If{$professor.department \neq department$}
         \State $Database.Professor.Update(userId, \{ department: department \})$
     \EndIf
-    
+
     \State \Comment{Step 4: Execute Batch Advisor Appointment Checks}
     \If{$professor.batchAdvisor$ \textbf{is not} $null$}
         \State \Return $\{status: \text{"error"}, message: \text{"User is already a Batch Advisor."}\}$
     \EndIf
-    
+
     \State $existing\_ba \gets Database.BatchAdvisor.Find(\{ department \})$
     \If{$existing\_ba$ \textbf{is not} $null$}
         \State \Return $\{status: \text{"error"}, message: \text{"Department already has a Batch Advisor."}\}$
     \EndIf
-    
+
     \State \Comment{Step 5: Atomic Transaction to Link Profiles}
     \State $Database.ExecuteTransaction($
     \State \quad $Database.BatchAdvisor.Create($
@@ -827,9 +827,9 @@ This algorithm maps the admin process of appointing a new BA. Because Batch Advi
     \State \quad $),$
     \State \quad $Database.Professor.Update(userId, \{ batchAdvisorId: userId \})$
     \State $)$
-    
+
     \State \Return $\{status: \text{"success"}, message: \text{"Appointed as Batch Advisor."}\}$
-    
+
 \EndFunction
 
 \end{algorithmic}
@@ -853,14 +853,14 @@ This algorithm breaks down the two-step process conducted by an Administrator to
 \State \textbf{Output:} $offering\_id, assignment\_status$
 
 \Function{CreateAndAssignOffering}{$offering\_params, professor\_id$}
-    
+
     \State \Comment{Step 1: Verify Administrative Access for Creation}
     \State $can\_create \gets RequirePermission(\text{"subjectOfferings"}, \text{["create"]})$
-    
+
     \If{\textbf{not} $can\_create$}
         \State \Return $\{status: \text{"error"}, message: \text{"Unauthorized access"}\}$
     \EndIf
-    
+
     \State \Comment{Validate against duplication}
     \State $existing\_count \gets Database.SubjectOffering.Count($
     \State \quad $year: offering\_params.year,$
@@ -868,23 +868,23 @@ This algorithm breaks down the two-step process conducted by an Administrator to
     \State \quad $subjectId: offering\_params.subjectId,$
     \State \quad $department: offering\_params.department$
     \State $)$
-    
+
     \If{$existing\_count > 0$}
         \State \Return $\{status: \text{"error"}, message: \text{"This offering already exists."}\}$
     \EndIf
-    
+
     \State \Comment{Step 2: Initialize Base Offering}
     \State $new\_offering \gets Database.SubjectOffering.Create(offering\_params)$
-    
+
     \State \Comment{Step 3: Proceed to Faculty Assignment}
     \State $AssignmentResult \gets Call($ \Call{AssignTeacherToOffering}{$new\_offering.id, professor\_id$} $)$
-    
+
     \If{$AssignmentResult.success$}
         \State \Return $\{status: \text{"success"}, offeringId: new\_offering.id\}$
     \Else
         \State \Return $\{status: \text{"partial\_error"}, message: AssignmentResult.message\}$
     \EndIf
-    
+
 \EndFunction
 
 \end{algorithmic}
@@ -895,21 +895,21 @@ This algorithm breaks down the two-step process conducted by an Administrator to
 \begin{algorithmic}[1]
 
 \Function{AssignTeacherToOffering}{$offering\_id, professor\_id$}
-    
+
     \State \Comment{Verify Administrative Access for Assignment}
     \State $can\_assign \gets RequirePermission(\text{"subjectOfferings"}, \text{["update"]})$
-    
+
     \If{\textbf{not} $can\_assign$}
         \State \Return $\{status: \text{"error"}, message: \text{"Unauthorized access"}\}$
     \EndIf
-    
+
     \State \Comment{Bind professor to offering cleanly using an Upsert}
     \State $Database.TeachingAssignment.Upsert($
     \State \quad $where: \{ offeringId: offering\_id \},$
     \State \quad $update: \{ professorId: professor\_id \},$
     \State \quad $create: \{ offeringId: offering\_id, professorId: professor\_id \}$
     \State $)$
-    
+
     \State \Return $\{status: \text{"success"}, message: \text{"Teacher assigned successfully."}\}$
 \EndFunction
 
@@ -933,9 +933,9 @@ This algorithm breaks down the two-step process conducted by an Administrator to
         \hline
         \textbf{API/SDK Name} & \textbf{Purpose} & \textbf{Used In Module} \\
         \hline
-        \textbf{Inngest} & 
+        \textbf{Inngest} &
         Provides serverless background jobs and scheduled task execution. It is utilized to handle asynchronous event-driven workflows, such as pausing execution to publish announcements at a scheduled date after a specific time limit. \newline
-        \textbf{Authentication:} Authenticates with the Inngest platform via environment-level API keys (implicit in the SDK setup). & 
+        \textbf{Authentication:} Authenticates with the Inngest platform via environment-level API keys (implicit in the SDK setup). &
         Scheduling Module \\
         \hline
     \end{tabular}
@@ -950,14 +950,14 @@ This algorithm breaks down the two-step process conducted by an Administrator to
         \hline
         \textbf{API/SDK Name} & \textbf{Purpose} & \textbf{Used In Module} \\
         \hline
-        \textbf{Better-Auth} & 
+        \textbf{Better-Auth} &
         Acts as the primary comprehensive authentication and authorization framework. It manages the full user lifecycle including sign-up, email/password login, email verification, password resets, and secure session management. It also integrates Role-Based Access Control (RBAC) to enforce permissions across different user roles (e.g., Admin, Student, Professor). \newline
-        \textbf{Authentication:} Utilizes secure HTTP-only Next.js cookies and database-backed sessions via a Prisma PostgreSQL adapter. & 
+        \textbf{Authentication:} Utilizes secure HTTP-only Next.js cookies and database-backed sessions via a Prisma PostgreSQL adapter. &
         User Management / Authentication Module \\
         \hline
-        \textbf{Nodemailer} & 
+        \textbf{Nodemailer} &
         Handles the reliable delivery of outgoing transactional emails. It is invoked programmatically to send critical communications to users, such as email verification links upon registration, password reset links, and role assignment notifications. \newline
-        \textbf{Authentication:} Authenticates with an external SMTP server using standard credentials (email and application password) injected via environment variables. & 
+        \textbf{Authentication:} Authenticates with an external SMTP server using standard credentials (email and application password) injected via environment variables. &
         Email verifications/ register \\
         \hline
     \end{tabular}
@@ -972,11 +972,11 @@ This algorithm breaks down the two-step process conducted by an Administrator to
 
 \section{User Interface Implementation}
 
-This section presents a detailed explanation of all user interface screens 
-developed for the system. Each screen is discussed in terms of its purpose, 
+This section presents a detailed explanation of all user interface screens
+developed for the system. Each screen is discussed in terms of its purpose,
 functionalities, navigation flow, validations, and integration with backend modules.
 
-Students are required to include screenshots of every major screen 
+Students are required to include screenshots of every major screen
 implemented in the system.
 
 % -------------------------------------------------
@@ -1023,13 +1023,13 @@ Each major screen explains following structure:
 \textbf{Purpose:}
 This screen enables new unauthenticated users to create an account in the system by providing their essential details.
 
-\textbf{Components:} 
-\begin{itemize} 
+\textbf{Components:}
+\begin{itemize}
     \item Name field
     \item Email field
     \item Password field
     \item Register button
-    \item Login link (for existing users) 
+    \item Login link (for existing users)
 \end{itemize}
 
 \textbf{Functional Flow:} The user enters their name, email, and password. Upon clicking the Register button, a loading spinner is displayed to indicate the submission is in progress. If the registration is successful, a confirmation toast notification appears and the user is redirected to a success page /register/success. If it fails, an error toast notification is displayed.
@@ -1053,12 +1053,12 @@ This screen enables new unauthenticated users to create an account in the system
 \textbf{Purpose:}
 This screen serves as the primary landing page for authenticated students. It provides an immediate academic overview, displaying all the subjects the student is currently enrolled in, along with their high-level details and attendance status.
 
-\textbf{Components:} 
+\textbf{Components:}
 \begin{itemize}
     \item Welcome greeting
-    \item Responsive grid layout for subject cards \item 
-    \textbf{Subject Card:}    
-    \begin{itemize} 
+    \item Responsive grid layout for subject cards \item
+    \textbf{Subject Card:}
+    \begin{itemize}
         \item Subject Name and Credit Hours badge
         \item Subject Code, Teacher Name, and Class Name
         \item Attendance section (Link to detailed attendance, percentage, and visual progress bar)
@@ -1232,7 +1232,7 @@ This screen provides Batch Advisors with a centralized dashboard to view, manage
 
 \textbf{Mobile and desktop adaptibility:}
 \begin{itemize}
-     
+
     \item \textbf{Sidebar:}
 \begin{itemize}
     \item Large screens (desktop) show sidebar open by default.
@@ -1322,23 +1322,23 @@ Security \& Bot Protection & Arcjet dashboard & Integrated security layer for ra
 \section{Chapter Summary}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-This chapter presented the detailed implementation of the proposed system. 
-The conceptual design and architectural models discussed in the previous chapter 
-were translated into practical software components, including backend services, 
+This chapter presented the detailed implementation of the proposed system.
+The conceptual design and architectural models discussed in the previous chapter
+were translated into practical software components, including backend services,
 core functional modules, algorithmic engines, and user interface elements.
 
-The development environment and configuration were described to ensure 
-reproducibility of the implementation process. Each major module was implemented 
-in a modular and loosely coupled manner to enhance maintainability and scalability. 
-The core prediction algorithm was integrated into the system backend, enabling 
+The development environment and configuration were described to ensure
+reproducibility of the implementation process. Each major module was implemented
+in a modular and loosely coupled manner to enhance maintainability and scalability.
+The core prediction algorithm was integrated into the system backend, enabling
 real-time processing of user input and generation of classification results.
 
-External APIs and SDK integrations were discussed where applicable, 
-highlighting authentication mechanisms and secure communication practices. 
-The user interface implementation was explained screen-by-screen, including 
+External APIs and SDK integrations were discussed where applicable,
+highlighting authentication mechanisms and secure communication practices.
+The user interface implementation was explained screen-by-screen, including
 validation logic, navigation flow, and backend integration.
 
-Finally, deployment strategies were presented, detailing hosting platforms, 
-server configuration, and production setup. Overall, this chapter demonstrates 
-the successful realization of the proposed system into a functional, 
+Finally, deployment strategies were presented, detailing hosting platforms,
+server configuration, and production setup. Overall, this chapter demonstrates
+the successful realization of the proposed system into a functional,
 deployable solution ready for testing and evaluation.
