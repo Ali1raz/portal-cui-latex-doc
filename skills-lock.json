@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "latex-paper-en": {
+      "source": "bahayonghang/academic-writing-skills",
+      "sourceType": "github",
+      "computedHash": "fd1aa307bcb341564c7b04618ec5d4b4ec17c4d738e2b69428317a57cd503a7a"
+    }
+  }
+}
