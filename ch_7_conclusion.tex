@@ -10,17 +10,15 @@
 
 \section{Conclusion}
 
-\textbf{Guidelines (300–500 words):}
-Summarize:
-\begin{itemize}
-    \item Problem addressed
-    \item System solution
-    \item Key achievements
-    \item Evaluation results
-    \item Overall contribution
-\end{itemize}
+This project addressed a common institutional problem: academic and administrative activities were handled through fragmented, manual, and role-disconnected processes, which caused delays, poor traceability, and inconsistent decision records. Critical workflows such as student leave processing, announcements, complaints handling, and installment-based fee management often depended on informal communication, making it difficult to ensure accountability, monitor progress, and maintain accurate historical logs.
 
-Write your conclusion here.
+The developed system enforces role-based access control and strict state transitions across four core modules: Leave Requests, Announcements, Complaints, and Fee Installments. Each module maps directly to the specific responsibilities of students and administrative staff, including Batch Advisors, HODs, Clerks, Accountants, and Directors. State-driven validation and unified review logs guarantee that every action generates a permanent audit trail, ensuring process outcomes match the specifications defined in the initial system design.
+
+This work formalizes disparate operational tasks into a unified architectural pattern consisting of request creation, hierarchical role-wise review, deterministic status transitions, and immutable logging. Specifically, the Leave Request module enforces a strict student-to-BA-to-HOD approval chain; the Announcement module filters broadcast visibility by user role and target audience; the Complaint module routes issues through designated administrative review paths; and the Fee Installment module tracks payment stages against authorized approvals.
+
+Testing confirms that the implemented entity relationships and database constraints maintain structural data integrity. Role-based middleware blocks unauthorized state transitions, and the presentation layer accurately reflects the underlying database state. The separation of data access, business logic, and presentation layers allows new modules to integrate without requiring rewrites of the core authentication and routing infrastructure.
+
+By establishing a direct correspondence between design artifacts and the underlying code, this project delivers an academic management system built on verifiable workflows rather than ad-hoc scripts. The centralized database schema and modular action routing provide a functional baseline for integrating future capabilities, including analytics dashboards, automated policy enforcement, and cross-departmental data sharing.
 
 % -------------------------------------------------
 % 7.2 Future Work
@@ -28,27 +26,8 @@ Write your conclusion here.
 
 \section{Future Work}
 
-\textbf{Guidelines (200–300 words):}
-Mention:
-\begin{itemize}
-    \item System improvements
-    \item Scalability enhancements
-    \item AI/ML improvements
-    \item Security enhancements
-    \item Additional modules
-\end{itemize}
+Future development will focus on extending the system's analytical capabilities and optimizing background processing. A proposed centralized analytics layer will aggregate data across modules to track request turnaround times, identify administrative bottlenecks, and generate automated workload reports for department heads.
 
-Write future work here.
+As the historical database expands, the architecture will require in-memory caching for frequent queries and asynchronous task queues for intensive operations such as bulk report generation. For high-volume modules, implementing table partitioning on the audit logs and configuring database read-replicas will stabilize query latency during peak academic periods.
 
-% -------------------------------------------------
-% 7.3 Limitations (Optional)
-% -------------------------------------------------
-
-\section{Limitations}
-
-Briefly mention system limitations:
-\begin{itemize}
-    \item Data limitations
-    \item Infrastructure limitations
-    \item Model constraints
-\end{itemize}
+Finally, integrating AI-assisted writing tools within the frontend text editors can help students draft clearer, more structured descriptions for leave requests and complaints, improving communication accuracy and reducing back-and-forth clarifications in english grammer.

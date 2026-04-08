@@ -308,9 +308,10 @@ This diagram how students submit leave request along with validations and approv
     \item \textbf{User Interaction:} Student selects a specific Subject Offering and a Date for the leave request and submits the form.
     \item \textbf{Validation Check:} System performs a concurrency check to ensure no duplicate request exists for the same studentId, subjectOfferingId, and date.
     \item \textbf{Database Interaction:} System creates a new record in the Leave Request table with status as PENDING.
-    \item \textbf{Model Interaction:} BA can login and view pending LR and accept or reject LR.
+    \item \textbf{Model Interaction:} BA can login and view pending LR and accept, reject, or request more info.
     \begin{itemize}
-        \item If accepted status updates to HOD\_PENDING.
+        \item If more info requested, status updates to REVIEW\_REQUESTED. Student can update and resubmit.
+        \item If accepted, status updates to HOD\_PENDING.
         \item If rejected, LR is discarded. End status to rejected.
     \end{itemize}
 
@@ -556,7 +557,7 @@ The leave request process follows a multi-stage approval workflow involving the 
 \begin{itemize}
     \item Student submits a leave request through the system.
 
-    \item BA reviews the pending request and can accept or reject. If accepted, forwarded to HOD for further review.
+    \item BA reviews the pending request and can accept, reject, or request more info. If accepted, forwarded to HOD for further review.
     \item HOD reviews the forwarded request by BA.
 
 \end{itemize}
@@ -959,7 +960,6 @@ Level 2 DFD further decomposes one complex module from Level 1.
 
 This section describes how data is structured, stored, and managed.
 
-\textbf{Guidelines:}
 \begin{itemize}
     \item \textbf{Database Type:} The system uses \textbf{PostgreSQL} (a relational SQL database) managed via Prisma ORM. This enforces strict relational integrity, handles complex multi-step approval workflows via foreign keys, and safely manages status constraints using DB-level enums.
 

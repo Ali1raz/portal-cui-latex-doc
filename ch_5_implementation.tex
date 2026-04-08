@@ -4,7 +4,7 @@
 
 \chapter{Implementation}
 
-This chapter details the practical realization of the proposed system. It maps the architectural design to specific functional modules, algorithms, interface layouts, and deployment configurations.
+This chapter presents the implementation of the system, describing the functional modules, core algorithms, user interfaces, and deployment configurations.
 
 % -------------------------------------------------
 % 5.1 Development Environment
@@ -12,7 +12,7 @@ This chapter details the practical realization of the proposed system. It maps t
 
 \section{Development Environment}
 
-This section outlines the software frameworks and hardware configurations employed during the system's development and deployment.
+This section describes the software frameworks and hardware configurations used during development and deployment.
 
 \subsection{Software Environment}
 
@@ -40,16 +40,7 @@ The system is developed and deployed in a web-based environment with no specific
 
 \section{Core Module Implementation}
 
-This section explains how each major module was implemented.
-
-\textbf{Guidelines:}
-For each module:
-\begin{itemize}
-    \item Describe its purpose
-    \item Explain key functionalities
-    \item Mention important classes/functions
-    \item Explain integration with other modules
-\end{itemize}
+This section describes the implementation details of each major module.
 
 \subsection{Module 1: Registration}
 
@@ -82,7 +73,7 @@ The authentication flow verifies the account's email status. If the email remain
 
 \subsection{Module 3: Student Request Leave}
 \textbf{Purpose:}
-Allows students to formally submit leave requests for specific lectures. These requests are subsequently routed to the Batch Advisor (BA) and Head of Department (HOD) for review.
+Allows students to formally submit LRs for specific lectures. These requests are subsequently routed to the BA (BA) and HOD (HOD) for review.
 
 \textbf{Functionality:}
 
@@ -96,7 +87,7 @@ Allows students to formally submit leave requests for specific lectures. These r
 \end{itemize}
 \item Real-time client-side validation enforces constraints during data entry:
 \begin{itemize}
-\item Duplicate check: verifies whether a leave request already exists for the identical subject and date
+\item Duplicate check: verifies whether a LR already exists for the identical subject and date
 \item Subject registration verification: ensures the selected course matches the student's active enrollment profile
 \end{itemize}
 \item If a duplicate is detected, an immediate error message is displayed.
@@ -104,18 +95,18 @@ Allows students to formally submit leave requests for specific lectures. These r
   \begin{itemize}
   \item The subject must be offered in the current semester
   \item The student must be formally registered in the subject
-  \item There must be no pre-existing pending or approved leave request for the same session
+  \item There must be no pre-existing pending or approved LR for the same session
   \end{itemize}
 \item Failed validations trigger a rejection and present localized error messages to the client. 
-\item Upon success, the system instantiates a new leave request record with a \texttt{PENDING} status, assigning it to the corresponding Batch Advisor.
+\item Upon success, the system instantiates a new LR record with a \texttt{PENDING} status, assigning it to the corresponding BA.
 \end{itemize}
 
 \textbf{Important functions:}
 
 \begin{itemize}
     \item Zod schema for form schema validation and in server-action for form values validation.
-    \item server action validates inputs, checks permission if student is allowed to create leave request, resolves subjectId and offering and student registeration, duplicate check and then creates LR. If fails it shows error to the student.
-    \item Leave request form that fetches student's enrolled subjects and renders LR form.
+    \item server action validates inputs, checks permission if student is allowed to create LR, resolves subjectId and offering and student registeration, duplicate check and then creates LR. If fails it shows error to the student.
+    \item LR form that fetches student's enrolled subjects and renders LR form.
     \item LR form using react-hook-form with date picker with weekday + range validation; Uploader for optional image; uses useTransition + tryCatch for async UX
     \item Prisma model LeaveRequest has fields studentId, offeringId, status, date and reason.
 \end{itemize}
@@ -124,7 +115,7 @@ Allows students to formally submit leave requests for specific lectures. These r
 \begin{itemize}
     \item \textbf{Subjects/Enrollment:} queries SubjectOffering enrollments to populate the subject dropdown
     \item \textbf{S3 / Uploader:} Uploader component uploads supporting images; the returned imageKey is stored on the record
-    \item \textbf{Auth (Better Auth)} requireSession() ensures only authenticated users can create leave requests.
+    \item \textbf{Auth (Better Auth)} requireSession() ensures only authenticated users can create LRs.
     \item \textbf{Toast:} Success/error feedback on form submission
 \end{itemize}
 Enrollment/subjects.
@@ -162,7 +153,7 @@ Displays targeted administrative and departmental announcements to students, usi
 
 \subsection{Module 5: Student Complaints}
 \textbf{Purpose:}
-Supports the formal submission of academic and administrative grievances by students. Complaints enter a multi-stage review pipeline, escalating progressively through the Batch Advisor to the Head of Department.
+Supports the formal submission of academic and administrative grievances by students. Complaints enter a multi-stage review pipeline, escalating progressively through the BA to the HOD.
 
 \subsubsection{Key Functionalities:}
 \begin{itemize}
@@ -193,14 +184,14 @@ Supports the formal submission of academic and administrative grievances by stud
 
 \subsection{Module 6: Admin user mangement:}
 \textbf{Purpose:}
-Admin can change any user's role, assign a department to professors, and appoint professors as Batch Advisors (each via a dedicated confirmation dialog).
+Admin can change any user's role, assign a department to professors, and appoint professors as BAs (each via a dedicated confirmation dialog).
 
 \textbf{Key Functionality:}
 \begin{itemize}
     \item \textbf{User Listing and Filtering:} Surfaces a paginated directory of platform users, executing minimal-latency server-side operations for role filtering, free-text search, and dynamic sorting over large datasets.
     \item \textbf{Role Management:} Supports the smooth elevation or modification of access tiers (e.g., granting Professor, Accountant, or Director privileges). The action automates the atomic removal of stale profile metadata and instantiates fresh structural records.
-    \item \textbf{Departmental Allocation:} Enables the dynamic mapping of professors to respective departments while preserving organizational constraints. It enforces protective invariants, such as blocking the reassignment of active Batch Advisors to prevent cascading data inconsistencies.
-    \item \textbf{Advisor Elevation Workflow:} Manages the transactional logic required to appoint a professor to the Batch Advisor role, ensuring compliance with business rules (e.g., verifying the target department lacks a preexisting advisor).
+    \item \textbf{Departmental Allocation:} Enables the dynamic mapping of professors to respective departments while preserving organizational constraints. It enforces protective invariants, such as blocking the reassignment of active BAs to prevent cascading data inconsistencies.
+    \item \textbf{Advisor Elevation Workflow:} Manages the transactional logic required to appoint a professor to the BA role, ensuring compliance with business rules (e.g., verifying the target department lacks a preexisting advisor).
 \end{itemize}
 
 \textbf{Important Classes and Functions}
@@ -208,7 +199,7 @@ Admin can change any user's role, assign a department to professors, and appoint
     \item \textbf{getAdminUsers}: A data fetching function querying the database. It builds pagination calculations, sorting logic, and conditional search clauses.
     \item \textbf{UsersTable}: used to render users.
     \item setUserRole: A server action implementing the business logic for changing a user's role. It verifies permissions and wraps the old profile deletion and new profile creation in a single transaction.
-    \item makeProfessorBatchAdvisor: server action that atomically creates a Batch Advisor record and links it to the corresponding professor and department.
+    \item makeProfessorBatchAdvisor: server action that atomically creates a BA record and links it to the corresponding professor and department.
 \end{itemize}
 
 \textbf{Integration with Other Modules}
@@ -219,7 +210,7 @@ Admin can change any user's role, assign a department to professors, and appoint
     \item \textbf{Frontend UI Components:} The table uses dropdown for actions like view details and update user-role using confirmation dialog.
 \end{itemize}
 
-\subsection{Module 7: Head of Department Announcements}
+\subsection{Module 7: HOD Announcements}
 
 \textbf{Purpose:}
 Provides department heads with a dedicated module to author, broadcast, and schedule administrative announcements tailored to their respective student bodies.
@@ -252,7 +243,7 @@ This section structures the core business logic algorithms responsible for drivi
 \textbf{Input:} User registration details including $name$, $email$, and $password$ \\
 \textbf{Output:} An API response object indicating success or failure \\
 
-The algorithm securely maps new user registrations by strictly validating payload inputs against the required formatting schema. Conforming credentials are incrementally passed to the authentication layer to establish a definitive profile record.
+Algorithm 1 validates user registration inputs against the required format. Valid credentials are passed to the authentication layer to create a new user profile.
 
 \begin{algorithm}[H]
 \caption{User Registration Process}
@@ -290,7 +281,7 @@ The algorithm securely maps new user registrations by strictly validating payloa
 \textbf{Input:} A user-provided $new\_password$, $confirm\_password$, and a URL $token$ \\
 \textbf{Output:} An API response triggering a success toast and redirection, or an error toast \\
 
-The algorithm captures a new password from the user alongside a secure token from their email link. It first validates that the new password meets length constraints and matches the confirmation field. Validated credentials and the token are then transmitted to the authentication client, which processes the reset and returns the specific success or error outcomes.
+Algorithm 2 processes password reset requests. It validates the new password length and confirmation match. The credentials and token are transmitted to the authentication client to process the reset.
 
 \begin{algorithm}[H]
 \caption{Reset Password Process}
@@ -336,7 +327,7 @@ The algorithm captures a new password from the user alongside a secure token fro
 \textbf{Input:} A user session, and complaint details including $title$, $details$, $category$, and optionally an $imageKey$ \\
 \textbf{Output:} An API response object indicating whether the complaint creation succeeded \\
 
-The algorithm handles the creation of a new grievance or query by a student. It enforces security by verifying the user session and ensuring the user holds the requisite permissions and is registered as a student. After confirming the user's departmental affiliation, the algorithm validates the input parameters against a strict schema before persisting the new complaint in the database linked to the student's ID and department.
+Algorithm 3 manages the creation of student complaints. It verifies the user session and validates permissions. After confirming the student's department, it validates the parameters against the schema and stores the complaint in the database.
 
 \begin{algorithm}[H]
 \caption{Student Complaint Creation Process}
@@ -393,15 +384,15 @@ The algorithm handles the creation of a new grievance or query by a student. It 
 % ---------------
 % ---------------
 
-\subsection{Algorithm 4: Submit Student Leave Request}
+\subsection{Algorithm 4: Submit Student LR}
 
-\textbf{Input:} A session containing the $student\_id$ and leave request data containing $date$, $reasonTitle$, $reasonDetails$, $subjectId$, and $imageKey$ \\
-\textbf{Output:} An API response object indicating whether the leave request was processed and approved \\
+\textbf{Input:} A session containing the $student\_id$ and LR data containing $date$, $reasonTitle$, $reasonDetails$, $subjectId$, and $imageKey$ \\
+\textbf{Output:} An API response object indicating whether the LR was processed and approved \\
 
-The algorithm captures a student's request for leave for a specific lecture session. It verifies the active user's authorization, validates the form schema and confirms the student's active enrollment in the referenced subject offering. It proactively prevents duplicate submissions.
+Algorithm 4 handles student LRs for specific lectures. It verifies user authorization, validates the required fields, and confirms the student's enrollment in the subject while checking for duplicate submissions.
 
 \begin{algorithm}[H]
-\caption{Submit Leave Request Process}
+\caption{Submit LR Process}
 \begin{algorithmic}[1]
 
 \State \textbf{Input:} $input\_data$, $student\_id$
@@ -413,7 +404,7 @@ The algorithm captures a student's request for leave for a specific lecture sess
     \State $has\_permission \gets RequirePermission(\text{"leaveRequest"}, \text{["create"]})$
 
     \If{\textbf{not} $has\_permission$}
-        \State \Return $\{status: \text{"error"}, message: \text{"You are not allowed to create leave requests"}\}$
+        \State \Return $\{status: \text{"error"}, message: \text{"You are not allowed to create LRs"}\}$
     \EndIf
 
     \State \Comment{Validate input schema criteria (min lengths, valid date)}
@@ -437,7 +428,7 @@ The algorithm captures a student's request for leave for a specific lecture sess
         \State \Return $\{status: \text{"error"}, message: \text{"You are not enrolled in this subject"}\}$
     \EndIf
 
-    \State \Comment{Prevent duplicate leave requests for the same date and offering}
+    \State \Comment{Prevent duplicate LRs for the same date and offering}
     \State $existing\_request \gets Database.LeaveRequest.Find($
     \State \quad $studentId: student\_id,$
     \State \quad $offeringId: offering.id,$
@@ -445,7 +436,7 @@ The algorithm captures a student's request for leave for a specific lecture sess
     \State $)$
 
     \If{$existing\_request$ \textbf{is not} $null$}
-        \State \Return $\{status: \text{"error"}, message: \text{"A leave request for this subject and date already exists"}\}$
+        \State \Return $\{status: \text{"error"}, message: \text{"A LR for this subject and date already exists"}\}$
     \EndIf
 
     \State $CreationResult \gets Database.LeaveRequest.Create($
@@ -458,9 +449,9 @@ The algorithm captures a student's request for leave for a specific lecture sess
     \State $)$
 
     \If{$CreationResult.success$}
-        \State \Return $\{status: \text{"success"}, message: \text{"Leave request created successfully."}\}$
+        \State \Return $\{status: \text{"success"}, message: \text{"LR created successfully."}\}$
     \Else
-        \State \Return $\{status: \text{"error"}, message: \text{"Failed to send leave request."}\}$
+        \State \Return $\{status: \text{"error"}, message: \text{"Failed to send LR."}\}$
     \EndIf
 
 \EndFunction
@@ -468,7 +459,7 @@ The algorithm captures a student's request for leave for a specific lecture sess
 \end{algorithmic}
 \end{algorithm}
 
-\textit{Note: The algorithms for the Batch Advisor and Head of Department review phases of the Leave Request flow structurally mirror the general departmental review mechanisms (see Algorithms 8 and 9) and are omitted here for brevity.}
+\textit{Note: The algorithms for the BA and HOD review phases of the LR flow structurally mirror the general departmental review mechanisms (see Algorithms 8 and 9) and are omitted here for brevity.}
 
 % ----------
 % ----------
@@ -478,7 +469,7 @@ The algorithm captures a student's request for leave for a specific lecture sess
 \textbf{Input:} A session and an $input\_data$ object encompassing $title$, $content$, $type$, $status$, an optional $scheduledFor$ date, an $isPinned$ flag, and an optional $imageKey$ \\
 \textbf{Output:} An API response indicating either immediate or scheduled publication success, or detailed error information \\
 
-This algorithm authenticates an HOD and validates their submission to create announcements. If scheduled the system guarantees the selected date falls between today and two days into the future.
+Algorithm 5 verifies HOD (HOD) permissions and validates announcement submissions. For scheduled announcements, it ensures the target date is within a 48-hour window.
 
 \begin{algorithm}[H]
 \caption{HOD Announcement Creation Process}
@@ -558,7 +549,7 @@ This algorithm authenticates an HOD and validates their submission to create ann
 \textbf{Input:} Inngest event payload containing the $announcementId$ and intended $scheduleDate$ \\
 \textbf{Output:} An update to the specified announcement record in the database, setting its status to "PUBLISHED" at the correct time \\
 
-This algorithm represents a durable, serverless background job managed by Inngest. It calculates the target date, strictly verifies its validity, and instructs the Inngest executor to pause the function's execution until that precise moment.
+Algorithm 6 describes the background job managed by Inngest. It validates the target date and schedules the function execution accordingly.
 
 \begin{algorithm}[htbp]
 \caption{HOD Scheduled Announcement Handler}
@@ -609,7 +600,7 @@ This algorithm represents a durable, serverless background job managed by Innges
 \textbf{Input:} Delivery address $to$, message $subject$, and $meta$ information containing the description and an optional link \\
 \textbf{Output:} A boolean success status indicating whether the email was dispatched successfully \\
 
-This algorithm serves as a wrapper around the Nodemailer transport service. Its primary purpose is to send email to user email, opting to log them to the console in development. In production, it formats the required text into a basic HTML template and attempts secure delivery via the configured Gmail SMTP service and sends to user email.
+Algorithm 7 wraps the Nodemailer transport service. In development mode, it logs output to the console. In production, it formats an HTML template and uses the Gmail SMTP service to deliver emails.
 
 \begin{algorithm}[htbp]
 \caption{System Email Dispatch Process}
@@ -653,23 +644,23 @@ This algorithm serves as a wrapper around the Nodemailer transport service. Its 
 
 % ---------------
 
-\subsection{Algorithm 8: Batch Advisor Complaint Review}
+\subsection{Algorithm 8: BA Complaint Review}
 
 \textbf{Input:} complaints submitted by students of BA which are pending \\
 \textbf{Output:} An update to the specified complaint record transitioning its status and saving the advisor's remarks \\
 
-This algorithm maps the initial stage of a student's complaints flow. When a new submission arrives, its status defaults to \textit{BA\_PENDING} and is routed to the corresponding department. The BA retrieves these pending items and adds remarks. If rejected, the COMPL is halted pending student revision. If accepted, the status escalates to \textit{HOD\_PENDING}, awaiting final decision from the Head of Department. Both outcomes log the advisor's remarks and a precise review timestamp.
+Algorithm 8 describes the BA (BA) review stage for student complaints. New submissions arrive as \textit{BA\_PENDING}. The BA can request additional information (\textit{BA\_REVIEW\_REQUESTED}), reject the complaint, or accept it for escalation (\textit{HOD\_PENDING}). The system records the decision, remarks, and timestamp.
 
 \begin{algorithm}[htbp]
-\caption{Batch Advisor Decision Workflow}
+\caption{BA Decision Workflow}
 \begin{algorithmic}[1]
 
-\State \textbf{Input:} $session$, $complaint\_id$, $is\_accepted$, $remarks$
+\State \textbf{Input:} $session$, $complaint\_id$, $decision$, $remarks$
 \State \textbf{Output:} $updated\_complaint$
 
-\Function{ReviewComplaintAsBatchAdvisor}{$session, complaint\_id, is\_accepted, remarks$}
+\Function{ReviewComplaintAsBatchAdvisor}{$session, complaint\_id, decision, remarks$}
 
-    \State \Comment{Authorize Batch Advisor access}
+    \State \Comment{Authorize BA access}
     \State $has\_permission \gets RequirePermission(\text{"complaints"}, \text{["update"]})$
 
     \If{\textbf{not} $has\_permission$}
@@ -694,9 +685,11 @@ This algorithm maps the initial stage of a student's complaints flow. When a new
         \State \Return $\{status: \text{"error"}, message: \text{"Complaint not found or already processed."}\}$
     \EndIf
 
-    \State \Comment{Determine escalation or termination based on advisor action}
-    \If{$is\_accepted$}
+    \State \Comment{Determine escalation, revision, or termination based on advisor decision}
+    \If{$decision == \text{"accept"}$}
         \State $new\_status \gets \text{"HOD\_PENDING"}$
+    \ElsIf{$decision == \text{"request\_info"}$}
+        \State $new\_status \gets \text{"BA\_REVIEW\_REQUESTED"}$
     \Else
         \State $new\_status \gets \text{"BA\_REJECTED"}$
     \EndIf
@@ -724,29 +717,29 @@ This algorithm maps the initial stage of a student's complaints flow. When a new
 
 % --------------
 
-\subsection{Algorithm 9: Head of Department Complaint Review}
+\subsection{Algorithm 9: HOD Complaint Review}
 
-\textbf{Input:} A user session belonging to an HOD, the $complaint\_id$, and a review decision ($is\_accepted$, $is\_reassigned$, along with optional $remarks$ and a $newDepartment$) \\
+\textbf{Input:} A user session belonging to an HOD, the $complaint\_id$, and a review decision ($is\_accepted$, $is\_assigned$, along with optional $remarks$ and a $newDepartment$) \\
 \textbf{Output:} An update to the specified complaint record culminating in final acceptance, rejection, or reassignment \\
 
-This algorithm maps the conclusive stage of a student's complaint's status. When a BA forwards a verified complaint, its status transitions to \textit{HOD\_PENDING}. The HOD assesses the COMPL. Rejection permanently halts the COMPL. Acceptance marks the complaint as successfully resolved (\textit{HOD\_ACCEPTED}). Importantly, if the complaint was incorrectly routed, the HOD can reassign the ticket to a new target department, resetting its state back to \textit{BA\_PENDING} within that new department's queue.
+Algorithm 9 outlines the HOD review process for escalated complaints. The HOD evaluates \textit{HOD\_PENDING} complaints to either reject, approve (\textit{HOD\_ACCEPTED}), or reassign them to another department (\textit{ASSIGNED}).
 
 \begin{algorithm}[H]
 \caption{HOD Decision Workflow}
 \begin{algorithmic}[1]
 
-\State \textbf{Input:} $complaint\_id$, $is\_accepted$, $is\_reassigned$, $new\_dept$
+\State \textbf{Input:} $complaint\_id$, $is\_accepted$, $is\_assigned$, $new\_dept$
 \State \textbf{Output:} $updated\_complaint$
 
-\Function{ReviewComplaintAsHOD}{$id, is\_accepted, is\_reassigned$}
+\Function{ReviewComplaintAsHOD}{$id, is\_accepted, is\_assigned$}
 
     \State \Comment{Query specific escalated complaint}
     \State $complaint \gets Database.Complaint.Find(id, \text{"HOD\_PENDING"})$
 
-    \If{$is\_reassigned$}
+    \If{$is\_assigned$}
         \State \Comment{Handle Reassignments}
-        \State $Database.Complaint.Update(id, \{status: \text{"BA\_PENDING"}, dept: new\_dept\})$
-        \State \Return $\text{"Complaint reassigned."}$
+        \State $Database.Complaint.Update(id, \{status: \text{"ASSIGNED"}, dept: new\_dept\})$
+        \State \Return $\text{"Complaint assigned."}$
     \EndIf
 
     \State \Comment{Determine escalation or termination}
@@ -768,15 +761,15 @@ This algorithm maps the conclusive stage of a student's complaint's status. When
 % --------------
 % --------------
 
-\subsection{Algorithm 10: Appoint Batch Advisor}
+\subsection{Algorithm 10: Appoint BA}
 
 \textbf{Input:} A user session belonging to an Admin, the target user's $userId$, and their specified $department$ \\
-\textbf{Output:} An update to the specified user's roles and database profiles, elevating them to Batch Advisor for that department \\
+\textbf{Output:} An update to the specified user's roles and database profiles, elevating them to BA for that department \\
 
-This algorithm maps the admin process of appointing a new BA. Because Batch Advisors are inherently tied to specific departments, they must first exist as Professors within those departments. It checks assigning an advisor to a department that already has one.
+Algorithm 10 describes the BA appointment process. It ensures the candidate holds a Professor role in the target department and verifies the department does not already have an assigned advisor.
 
 \begin{algorithm}[H]
-\caption{Batch Advisor Appointment Workflow}
+\caption{BA Appointment Workflow}
 \begin{algorithmic}[1]
 
 \State \textbf{Input:} $userId$, $department$
@@ -808,14 +801,14 @@ This algorithm maps the admin process of appointing a new BA. Because Batch Advi
         \State $Database.Professor.Update(userId, \{ department: department \})$
     \EndIf
 
-    \State \Comment{Step 4: Execute Batch Advisor Appointment Checks}
+    \State \Comment{Step 4: Execute BA Appointment Checks}
     \If{$professor.batchAdvisor$ \textbf{is not} $null$}
-        \State \Return $\{status: \text{"error"}, message: \text{"User is already a Batch Advisor."}\}$
+        \State \Return $\{status: \text{"error"}, message: \text{"User is already a BA."}\}$
     \EndIf
 
     \State $existing\_ba \gets Database.BatchAdvisor.Find(\{ department \})$
     \If{$existing\_ba$ \textbf{is not} $null$}
-        \State \Return $\{status: \text{"error"}, message: \text{"Department already has a Batch Advisor."}\}$
+        \State \Return $\{status: \text{"error"}, message: \text{"Department already has a BA."}\}$
     \EndIf
 
     \State \Comment{Step 5: Atomic Transaction to Link Profiles}
@@ -828,7 +821,7 @@ This algorithm maps the admin process of appointing a new BA. Because Batch Advi
     \State \quad $Database.Professor.Update(userId, \{ batchAdvisorId: userId \})$
     \State $)$
 
-    \State \Return $\{status: \text{"success"}, message: \text{"Appointed as Batch Advisor."}\}$
+    \State \Return $\{status: \text{"success"}, message: \text{"Appointed as BA."}\}$
 
 \EndFunction
 
@@ -843,7 +836,7 @@ This algorithm maps the admin process of appointing a new BA. Because Batch Advi
 \textbf{Input:} Target subject configuration parameters ($subjectId, semester, year, totalLectures, department$) alongside a selected $professorId$  \\
 \textbf{Output:} The generated $offeringId$ and a success status if the professor is successfully bound to the new offering \\
 
-This algorithm breaks down the two-step process conducted by an Administrator to launch a new academic offering. First, it validates that the proposed offering (e.g., specific semester and year for a specific subject in a department) does not already exist to prevent database duplication. Upon successfully creating the base offering, the second stage triggers: binding a faculty member to that specific classroom via an atomic upsert operation on the TeachingAssignment table.
+Algorithm 11 outlines the administrator workflow for creating academic offerings. It first checks for existing duplicates based on semester, year, subject, and department. Once the offering is created, it assigns the specified professor via an atomic upsert on the TeachingAssignment table.
 
 \begin{algorithm}[H]
 \caption{Offering Creation Workflow (Part 1: Validation and Initialization)}
@@ -972,7 +965,7 @@ This algorithm breaks down the two-step process conducted by an Administrator to
 
 \section{User Interface Implementation}
 
-This section details the user interface architecture established for the platform. Each primary view is analyzed regarding its functional purpose, navigation pathways, validation boundaries, and explicit connections to the backend server architecture.
+This section describes the user interfaces, outlining the purpose, layout, flow, and backend integrations for each main screen.
 
 % -------------------------------------------------
 % 5.5.1 UI Design Approach
@@ -1074,22 +1067,16 @@ This screen serves as the primary landing page for authenticated students. It pr
   \label{fig:student-dashboard}
 \end{figure}
 
-% \begin{figure}[h]
-% \centering
-% \includegraphics[width=0.8\textwidth]{Figures/dashboard_screen.png}
-% \caption{Dashboard Screen}
-% \end{figure}
-
 % -------------------------------------------------
 
-\subsubsection{Screen 3: Student Leave Request Screen}
+\subsubsection{Screen 3: Student LR Screen}
 
 \textbf{Purpose:}
-This screen enables an authenticated student to submit a formal leave request for a specific enrolled subject. The request is then forwarded to their respective Department Batch Advisor for further review.
+This screen enables an authenticated student to submit a formal LR for a specific enrolled subject. The request is then forwarded to their respective Department BA for further review.
 
-\textbf{Components:} \begin{itemize} \item \textbf{Text Content:} Page title (``New Leave Request'') and informational text explaining the purpose of the form. \item \textbf{Navigation Link:} "View all leave Requests" link pointing to the student's leave history. \item \textbf{Form Inputs:} \begin{itemize} \item Subject Selection Dropdown \item Date Picker (Calendar Popover) \item Reason Title Input \item Description Textarea \item Image Evidence Uploader \end{itemize} \item \textbf{Submit Button:} Disables temporarily and shows a loading state ("Submitting...") during the form submission. \end{itemize}
+\textbf{Components:} \begin{itemize} \item \textbf{Text Content:} Page title (``New LR'') and informational text explaining the purpose of the form. \item \textbf{Navigation Link:} "View all LRs" link pointing to the student's leave history. \item \textbf{Form Inputs:} \begin{itemize} \item Subject Selection Dropdown \item Date Picker (Calendar Popover) \item Reason Title Input \item Description Textarea \item Image Evidence Uploader \end{itemize} \item \textbf{Submit Button:} Disables temporarily and shows a loading state ("Submitting...") during the form submission. \end{itemize}
 
-\textbf{Functional Flow:} The user accesses the screen, which dynamically loads their currently enrolled subjects. They fill out the form by picking a subject, selecting a valid date, providing a title and detailed reason, and selectively attaching an image (e.g., a medical certificate). When the user clicks "Submit Leave Request", the system attempts to send the request. If successful, the form is cleared, the page is refreshed to sync the latest state, and a success toast notification appears. If an error occurs, an error toast is displayed.
+\textbf{Functional Flow:} The user accesses the screen, which dynamically loads their currently enrolled subjects. They fill out the form by picking a subject, selecting a valid date, providing a title and detailed reason, and selectively attaching an image (e.g., a medical certificate). When the user clicks "Submit LR", the system attempts to send the request. If successful, the form is cleared, the page is refreshed to sync the latest state, and a success toast notification appears. If an error occurs, an error toast is displayed.
 
 \textbf{Backend Integration:} Before rendering the screen, Server-Side logic enforces route authorization via \texttt{requirePermission({ leaveRequest: ["create"] })}. If unauthorized, the user is redirected. Once authorized, \texttt{getStudentEnrolledSubjects()} retrieves the necessary data. Upon form submission, the client-side form triggers a Next.js Server Action named \texttt{sendLeaveRequest}. The call runs non-blockingly using React's \texttt{useTransition}.
 
@@ -1099,7 +1086,7 @@ Specific field constraints include: \begin{itemize} \item \textbf{Date Restricti
 \begin{figure}[H]
   \centering
   \includegraphics[width=\linewidth]{Figures/web/st-LR.png}
-  \caption{Student Leave Request Screen}
+  \caption{Student LR Screen}
   \label{fig:student-leave-request}
 \end{figure}
 
@@ -1130,13 +1117,13 @@ This screen provides an interface for students to submit new complaints regardin
 \subsubsection{Screen 5: Professor Attendance Screen}
 
 \textbf{Purpose:}
-This screen enables professors to manage and record the attendance for a specific class offering. It allows bulk marking of attendance and provides the ability to specify the lecture's topic, date, and duration. Professor can see leave request from students with their status.
+This screen enables professors to manage and record the attendance for a specific class offering. It allows bulk marking of attendance and provides the ability to specify the lecture's topic, date, and duration. Professor can see LR from students with their status.
 
-\textbf{Components:} \begin{itemize} \item \textbf{Header:} Title ("Manage attendance for class") \item \textbf{Lecture Details Form:} \begin{itemize} \item Topic input field \item Date picker (Calendar popover) \item Start Time and End Time selectors (Popover dropdowns) \end{itemize} \item \textbf{Attendance Table:} \begin{itemize} \item Bulk Selection Header (Count of students and selected students) \item Bulk Action Buttons ("Mark as Present", "Mark as Absent") \item Student Rows (Image, Name with optional Leave Request indicator, Registration Number) \item Individual Attendance Radio buttons (Present/Absent for each student) \end{itemize} \item \textbf{Action Button:} "Mark Attendance" button to submit the form. \end{itemize}
+\textbf{Components:} \begin{itemize} \item \textbf{Header:} Title ("Manage attendance for class") \item \textbf{Lecture Details Form:} \begin{itemize} \item Topic input field \item Date picker (Calendar popover) \item Start Time and End Time selectors (Popover dropdowns) \end{itemize} \item \textbf{Attendance Table:} \begin{itemize} \item Bulk Selection Header (Count of students and selected students) \item Bulk Action Buttons ("Mark as Present", "Mark as Absent") \item Student Rows (Image, Name with optional LR indicator, Registration Number) \item Individual Attendance Radio buttons (Present/Absent for each student) \end{itemize} \item \textbf{Action Button:} "Mark Attendance" button to submit the form. \end{itemize}
 
 \textbf{Functional Flow:} The professor arrives at the screen which loads the roster for the assigned class securely from the server. They enter the lecture details: topic, date (automatically disabled for future dates or weekends), start time, and end time.
 
-For attendance, the default state for all students is "Absent". The professor can mark attendance individually using radio buttons per student, or use checkboxes to select multiple students and apply a bulk status via the "Mark as Present" or "Mark as Absent" buttons above the table. If a student has a pending leave request, a blinking alert icon appears next to their name, which opens a dialog detailing the request's date and reason, with a link to view full details.
+For attendance, the default state for all students is "Absent". The professor can mark attendance individually using radio buttons per student, or use checkboxes to select multiple students and apply a bulk status via the "Mark as Present" or "Mark as Absent" buttons above the table. If a student has a pending LR, a blinking alert icon appears next to their name, which opens a dialog detailing the request's date and reason, with a link to view full details.
 
 Upon clicking "Mark Attendance", the client initiates a server action transition. If successful, a toast notification confirms submission, the form's lecture topic is cleared, and the attendance states revert to the default (Absent).
 
@@ -1153,18 +1140,18 @@ Upon clicking "Mark Attendance", the client initiates a server action transition
 
 % -------------------------------------------------
 
-\subsubsection{Screen 6: Batch Advisor Complaints Screen}
+\subsubsection{Screen 6: BA Complaints Screen}
 
 \textbf{Purpose:}
-This screen provides Batch Advisors with a centralized dashboard to view, manage, and process complaints submitted by students within their assigned batch.
+This screen provides BAs with a centralized dashboard to view, manage, and process complaints submitted by students within their assigned batch.
 
 \textbf{Components:}
 \begin{itemize}
-    \item \textbf{Header:} Page title ("Batch Advisor Complaints") and a brief description.
+    \item \textbf{Header:} Page title ("BA Complaints") and a brief description.
     \item \textbf{Filter and Search Bar:}
     \begin{itemize} \item Global text search input (searches across title, details, and student names) \item Dropdown filters for Status, Attachment presence, and Category \item Date Range picker (Calendar popover) \item "Clear Filters" button (conditionally rendered when filters are active) \end{itemize} \item \textbf{Complaints Data Table:} \begin{itemize} \item Draggable column headers for customizable row ordering via drag-and-drop \item Data columns: Serial Number, Student (Name + Registration No), Title (truncated), Category, Status (badge styling), Created Date, Attachment status, and Actions \item "No complaints found" empty state \end{itemize} \item \textbf{Pagination Controls:} \begin{itemize} \item Rows per page selector \item Current result range indicator (e.g., "1-10 of 50") \item Navigation buttons (First, Previous, Next, Last) \end{itemize} \end{itemize}
 
-\textbf{Functional Flow:} The Batch Advisor accesses the page to see a paginated list of complaints. They can filter the data using the search bar, dropdowns, or date picker; these interactions dynamically update the URL search parameters to maintain state. The table columns can be reordered by dragging the headers horizontally. Clicking on the "Actions" column allows the advisor to interact with a specific complaint (e.g., view details or change status). The pagination controls at the bottom navigate through large data sets.
+\textbf{Functional Flow:} The BA accesses the page to see a paginated list of complaints. They can filter the data using the search bar, dropdowns, or date picker; these interactions dynamically update the URL search parameters to maintain state. The table columns can be reordered by dragging the headers horizontally. Clicking on the "Actions" column allows the advisor to interact with a specific complaint (e.g., view details or change status). The pagination controls at the bottom navigate through large data sets.
 
 \textbf{Backend Integration:} The page uses Next.js server components to fetch data initially. \texttt{baComplaintsSearchParamsCache} from \texttt{nuqs} parses the URL search parameters on the server and passes them to the \texttt{baGetComplaints(params)} data access layer, executing database queries efficiently. For client-side interactions, the \texttt{BaComplaintsTable} uses \texttt{nuqs}' \texttt{useQueryStates} to synchronize filter, sort, and pagination states (like \texttt{sortBy}, \texttt{page}, \texttt{status}) with the browser's URL, updating the server-rendered results incrementally.
 
@@ -1173,7 +1160,7 @@ This screen provides Batch Advisors with a centralized dashboard to view, manage
 \begin{figure}[H]
   \centering
   \includegraphics[width=\linewidth]{Figures/web/ba-lr.png}
-  \caption{Batch Advisor Complaints Screen}
+  \caption{BA Complaints Screen}
   \label{fig:ba-complaints}
 \end{figure}
 
@@ -1290,7 +1277,7 @@ This screen provides Batch Advisors with a centralized dashboard to view, manage
 
 \section{Deployment}
 
-This section describes how we used the deployment platforms and architectural services in the project.
+This section describes the platforms and services used for system deployment.
 
 \begin{table}[h]
 \centering
@@ -1317,10 +1304,8 @@ Security \& Bot Protection & Arcjet dashboard & Integrated security layer for ra
 \section{Chapter Summary}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-This chapter detailed the complete technical realization of the proposed student portal system. It bridged the gap between architectural theory and practical implementation, detailing the specific frameworks, data flows, and module integrations necessary to operationalize the platform.
+This chapter documented the implementation of the proposed student portal system, including development environments, system modules, algorithms, UI design, and deployment setups.
 
-The configuration of the development environment was outlined to establish a reproducible local setup. Each critical sub-system (such as authentication, student leave request handling, hierarchical complaint processing, and scheduled announcements) was documented conceptually and algorithmically. These modules were designed with strict decoupling principles to ensure reliable long-term maintainability.
+The development environment established the frameworks necessary for the system. Module and algorithm implementations covered authentication, LRs, complaint handling, and announcements. External services like Inngest and Better-Auth were integrated to support asynchronous tasks and role-based access.
 
-Also, the chapter examined the role of specialized external APIs, such as Inngest for asynchronous job scheduling and Better-Auth for role-based session authorization. The user interface implementation verified the system's responsive layout strategy, mapping direct interactions to underlying server actions. 
-
-The documented serverless deployment infrastructure, hosted across Vercel and Neon Serverless Postgres, confirms the platform's readiness for reliable production use. This thorough technical foundation sets the stage for the subsequent testing and evaluation phase.
+The UI design section mapped out responsive interfaces matching user requirements. Finally, the deployment infrastructure described the serverless configuration on Vercel and Neon. This implementation provides a functioning system ready for testing.
