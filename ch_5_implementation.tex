@@ -459,7 +459,7 @@ Algorithm 4 handles student LRs for specific lectures. It verifies user authoriz
 \end{algorithmic}
 \end{algorithm}
 
-\textit{Note: The algorithms for the BA and HOD review phases of the LR flow structurally mirror the general departmental review mechanisms (see Algorithms 8 and 9) and are omitted here for brevity.}
+\textit{Note: The BA and HOD review phases of the LR flow mirror the complaint review mechanisms (Algorithms 8–9). BA review can result in \texttt{REVIEW\_REQUESTED} (requesting more info from student), \texttt{HOD\_PENDING} (accepting to escalate), or \texttt{REJECTED}. When student resubmits from \texttt{REVIEW\_REQUESTED}, status resets to \texttt{PENDING}. HOD review then results in \texttt{APPROVED} or \texttt{REJECTED}. Algorithms 8 and 9 provide the generic implementation for both leave and complaint workflows.}
 
 % ----------
 % ----------

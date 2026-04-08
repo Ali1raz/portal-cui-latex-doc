@@ -71,7 +71,7 @@ the HOD is enforced by the \texttt{LeaveApplication} feature's methods, not by a
     The three main state machines in this system are:
 
     \begin{itemize}
-      \item \textbf{Leave Application:} \texttt{PENDING} $\to$ \texttt{HOD\_PENDING} $\to$
+      \item \textbf{Leave Application:} \texttt{PENDING} $\leftrightarrow$ \texttt{REVIEW\_REQUESTED} $\to$ \texttt{HOD\_PENDING} $\to$
             \texttt{APPROVED} / \texttt{REJECTED}.
             Only after reaching \texttt{APPROVED} does the admin update attendance
             records.
