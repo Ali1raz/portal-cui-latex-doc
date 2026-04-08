@@ -17,27 +17,27 @@ The sections below describe each approach, why it was selected, and how it conne
 the others.
 
 \begin{itemize}
-    \item \subsection*{Agile Development Process}
+    \item \textbf{Agile Development Process}
 The project runs in two-week sprints. Sprint~1 covered authentication and role setup.
 Sprint~2 built the fee module. Sprint~3 handled complaints. This rhythm was chosen
 because the requirements were not fully settled at the start — conversations with the
 HOD, students, and the accounts office kept surfacing new edge cases (e.g., whether a
-batch advisor should see all department complaints or only their batch's). Short cycles
+BA should see all department complaints or only their batch's). Short cycles
 let the team absorb that feedback without throwing away large amounts of work.
 
-\textbf{Why it fits:} University portal is client-facing and evolve
+\textbf{Why it fits:} University system is client-facing and evolve
 with institutional policy. A fixed-plan waterfall process would have locked in
-decisions before the team understood how leave approval should chain from teacher to
+decisions before the team understood how leave approval should chain from BA to
 HOD to admin. Agile keeps those decisions open until they are actually understood.
 
-    \item \subsection*{Monolithic Architecture}
+    \item \textbf{Monolithic Architecture}
 The system is a single Next.js application backed by one PostgreSQL database on Neon
 DB, deployed as one unit. There are no separate microservices.
 
 \textbf{Why it fits this domain:} For a team of two developers at an early stage, this is the correct call. Microservices introduce deployment pipelines, inter-service networking, distributed tracing, and contract versioning. None of those problems need solving yet. The codebase is one repository, the database is one schema, the deployment is one command. The architecture is internally modular — Leave, Fee, Complaint, and Announcement logic live in separate directories with their own API routes and database queries.
 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    \item \subsection*{Role-Based Access Control (RBAC)}
+    \item \textbf{Role-Based Access Control (RBAC)}
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     The system defines six roles: Student, Proffessor, BA, HOD, Admin, and Accountant. Every API route and UI component checks the user's
@@ -45,21 +45,21 @@ role before running. A teacher cannot approve a complaint; an accountant cannot
 approve leave.
 
 \textbf{Why it fits:} RBAC was chosen because each role has a different set of permissions. A simpler boolean \texttt{isAdmin} flag would not capture the distinction between a
-teacher (marks attendance, reviews leave) and a batch advisor (can also see batch-level reports). Defining permissions at the role level, not the user level, also makes the system auditable and maintainable.\
+teacher (marks attendance, views leave) and a BA (reviews leave, sees batch-level reports). Defining permissions at the role level, not the user level, also makes the system auditable and maintainable.\
 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    \item \subsection*{Domain-Driven Design (DDD)}
+    \item \textbf{Domain-Driven Design (DDD)}
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 The codebase is organized around the core concepts of the university domain rather than around technical layers. The primary features are: \texttt{LeaveApplication}, \texttt{FeeStructure}, \texttt{Complaint}, and \texttt{Announcement}. Each feature owns its own state and implements its own business rules.
 
-For example, the rule that a fee structure may have at most three installments lives inside the \texttt{FeeStructure} feature — not in a controller, not in a UI validation function. The rule that a leave requires teacher approval before reaching
+For example, the rule that a fee structure may have at most three installments lives inside the \texttt{FeeStructure} feature — not in a controller, not in a UI validation function. The rule that a leave requires BA approval before reaching
 the HOD is enforced by the \texttt{LeaveApplication} feature's methods, not by an \texttt{if} statement scattered across multiple API routes.
 
 \textbf{Why:} This matters in a university system because the domain has real, non-trivial rules (80\% attendance for exam eligibility, leave dates must fall within the academic calendar, complaint categories are predefined). Putting those rules in the domain layer, close to the data they govern, keeps the codebase honest.
 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    \item \subsection*{State Machine Pattern}
+    \item \textbf{State Machine Pattern}
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     Several entities in the system have a lifecycle that must follow strict, defined
@@ -71,14 +71,14 @@ the HOD is enforced by the \texttt{LeaveApplication} feature's methods, not by a
     The three main state machines in this system are:
 
     \begin{itemize}
-      \item \textbf{Leave Application:} \texttt{BA\_PENDING} $\to$ \texttt{BA\_APPROVED} $\to$
-            \texttt{HOD\_PENDING} $\to$ \texttt{APPROVED} / \texttt{REJECTED}.
+      \item \textbf{Leave Application:} \texttt{PENDING} $\to$ \texttt{HOD\_PENDING} $\to$
+            \texttt{APPROVED} / \texttt{REJECTED}.
             Only after reaching \texttt{APPROVED} does the admin update attendance
             records.
 
-      \item \textbf{Complaint:} \texttt{SUBMITTED} $\to$ \texttt{BA\_ACCEPTED} $\to$
-            \texttt{HOD\_PENDING} $\to$
-            \texttt{HOD\_ACCEPTED}, or \texttt{REJECTED} from \texttt{UNDER\_REVIEW}.
+      \item \textbf{Complaint:} \texttt{BA\_PENDING} $\to$ \texttt{HOD\_PENDING} $\to$
+            \texttt{HOD\_ACCEPTED} / \texttt{HOD\_REJECTED} / \texttt{ASSIGNED}.
+            A batch advisor can also reject it early (\texttt{BA\_REJECTED}).
 
       \item \textbf{Fee Installment:} \texttt{PENDING} $\to$ \texttt{LATE} $\to$
             \texttt{OVERDUE} $\to$ \texttt{PAID}. Transitions are time-driven; the
@@ -90,7 +90,7 @@ the HOD is enforced by the \texttt{LeaveApplication} feature's methods, not by a
     are defined once in the domain layer and enforced on every relevant API route.
 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        \item \subsection*{Design Principles}
+        \item \textbf{Design Principles}
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \textbf{SOLID Principles}
@@ -126,9 +126,9 @@ at its own pace.
 
 \end{itemize}
 
-\textbf{Why This Combination Suits a Web-Based Academic Portal:}
+\textbf{Why This Combination Suits a Web-Based Academic system:}
 
-A university portal has a small, well-defined user base (students and staff at one
+A university system has a small, well-defined user base (students and staff at one
 campus), strict business rules (attendance thresholds, fee deadlines, approval chains),
 and real institutional accountability requirements (who approved what and when).
 
@@ -142,7 +142,7 @@ append-only log satisfies accountability without requiring specialized infrastru
 Agile delivery with modular increments let the team build and validate one feature at
 a time with actual users (students and the HOD assistant) rather than delivering
 everything at once and discovering misunderstandings at the end. That feedback loop is
-what shaped the final design — the batch advisor approval step, for instance, was added
+what shaped the final design — the BA approval step, for instance, was added
 after an early demo revealed that the HOD was being overwhelmed with low-priority leave
 requests.
 
@@ -157,7 +157,7 @@ The project follows the \textbf{Incremental-Iterative} model with \textbf{Agile}
 
 The incremental-iterative model was chosen for three concrete reasons.
 
-First, the system enhances an \textit{existing} portal. The student database and
+First, the system enhances an \textit{existing} system. The student database and
 authentication layer were already in production. A waterfall approach would have
 required designing all four modules upfront before any of them could be tested against
 real users. That is the wrong sequence when the existing system has undocumented
@@ -193,7 +193,7 @@ peer review on days nine and ten; demo and retrospective on the final day. Unfin
 tasks were re-estimated and moved to the next sprint's backlog rather than extending
 the current sprint.
 
-One decision that came directly from this rhythm: the batch advisor approval step in
+One decision that came directly from this rhythm: the BA approval step in
 the leave workflow was not in the original requirements. It was added after the
 Sprint~3 demo, when the HOD noted that low-priority leave requests were reaching his
 queue without any prior filtering. Adding it required one additional state
@@ -214,7 +214,7 @@ sprint rather than a change request against a frozen specification.
  Fee structure creation (Accountant), installment view and PDF voucher (Student) \\
 \hline
 3 & Leave Request &
- Leave submission (Student), two-level approval (Teacher $\to$ HOD), attendance update (Admin) \\
+ Leave submission (Student), two-level approval (BA $\to$ HOD), attendance update (Admin) \\
 \hline
 4 & Complaints \& Announcements &
  Complaint submission and assignment workflow, announcement CRUD with audience targeting \\
@@ -281,7 +281,7 @@ This section describes the high-level architecture of the system.
   \centering
   \includegraphics[width=\linewidth]{Figures/diagrams/arch-diagram.png}
   \caption{System overview}
-  \label{fig:system-overview}
+  \label{fig:arch-diagram}
 \end{figure}
 
 
@@ -307,14 +307,14 @@ This diagram how students submit leave request along with validations and approv
 
     \item \textbf{User Interaction:} Student selects a specific Subject Offering and a Date for the leave request and submits the form.
     \item \textbf{Validation Check:} System performs a concurrency check to ensure no duplicate request exists for the same studentId, subjectOfferingId, and date.
-    \item \textbf{Database Interaction:} System creates a new record in the Leave Request table with status as BA\_PENDING.
+    \item \textbf{Database Interaction:} System creates a new record in the Leave Request table with status as PENDING.
     \item \textbf{Model Interaction:} BA can login and view pending LR and accept or reject LR.
     \begin{itemize}
         \item If accepted status updates to HOD\_PENDING.
         \item If rejected, LR is discarded. End status to rejected.
     \end{itemize}
 
-    \item \textbf{User Interaction Review Phase 2:} HOD logs in and views the HOD\_PENDING LRs.
+    \item \textbf{User Interaction Review Phase 2:} HOD logs in and views the HOD\_PENDING LRs. 
     \begin{itemize}
         \item \textbf{Reject:} Update DB status to REJECTED. (End State: Rejected)
         \item \textbf{Accept:} Update DB status to APPROVED. (End State: Approved)
@@ -341,9 +341,9 @@ This diagram how students submit complaints along with validations and approval 
     \item \textbf{Creation \& Validation:} Student submits title, details, and category. After validating required fields, the system creates a Complaint record in the database with status BA\_PENDING, defaulting to the student's department.
     \item \textbf{BA Decision:} The BA reviews the queue and decides to either Reject or Accept.
     \item \textbf{HOD Final Action:} The HOD reviews HOD\_PENDING complaints. Decisions include:
-    HOD\_ACCEPTED or HOD\_REJECTED (Final States).
-
-    \item \textbf{End State:} Status is finalized as HOD\_ACCEPTED, HOD\_REJECTED.
+    HOD\_ACCEPTED, HOD\_REJECTED, or ASSIGNED (to another department).
+    
+    \item \textbf{End State:} Status is finalized as HOD\_ACCEPTED, HOD\_REJECTED, ASSIGNED, or BA\_REJECTED.
 \end{itemize}
 
 
@@ -554,9 +554,9 @@ The authentication process follows a standard credential-based login with sessio
 The leave request process follows a multi-stage approval workflow involving the student, BA, HOD, and admin.
 
 \begin{itemize}
-    \item Student submits a leave request through the portal.
+    \item Student submits a leave request through the system.
 
-    \item Batch Advisor reviews the pending request and can accept or reject. If accepted, forwarded to HOD for further review.
+    \item BA reviews the pending request and can accept or reject. If accepted, forwarded to HOD for further review.
     \item HOD reviews the forwarded request by BA.
 
 \end{itemize}
@@ -565,35 +565,35 @@ The leave request process follows a multi-stage approval workflow involving the 
   \centering
   \includegraphics[width=\linewidth]{Figures/diagrams/seq/seq-LR.png}
   \caption{Sequence diagram - Student leave request}
-  \label{fig:seq-login}
+  \label{fig:seq-lr}
 \end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Sequence Diagram – Complaint Submission and Resolution Flow}
-The complaint process follows a multi-stage review workflow involving the student, batch advisor, and HOD, with support for revision requests, rejection, and reassignment.
+The complaint process follows a multi-stage review workflow involving the student, BA, and HOD, with support for revision requests, rejection, and reassignment.
 
 \begin{itemize}
-    \item Student submits a complaint through the portal, providing the category and details.
-    \item Portal acknowledges receipt and sets the complaint status to \texttt{BA\_PENDING}.
+    \item Student submits a complaint through the system, providing the category and details.
+    \item system acknowledges receipt and sets the complaint status to \texttt{BA\_PENDING}.
 
-    \item Batch Advisor reviews the complaint:
+    \item BA reviews the complaint:
     \begin{itemize}
         \item On requesting a revision:
         \begin{itemize}
-            \item Batch Advisor requests a revision with remarks via the portal. The complaint is not rejected at this stage.
-            \item Portal notifies the student that a revision has been requested.
-            \item Student updates the complaint and resubmits through the portal.
-            \item Portal notifies the Batch Advisor that the complaint has been resubmitted for review.
+            \item BA requests a revision with remarks via the system. The complaint is not rejected at this stage.
+            \item system notifies the student that a revision has been requested.
+            \item Student updates the complaint and resubmits through the system.
+            \item system notifies the BA that the complaint has been resubmitted for review.
         \end{itemize}
         \item On rejection:
         \begin{itemize}
-            \item Batch Advisor rejects the complaint with remarks on the portal.
-            \item Portal notifies the student of the rejection.
+            \item BA rejects the complaint with remarks on the system.
+            \item system notifies the student of the rejection.
         \end{itemize}
         \item On acceptance:
         \begin{itemize}
-            \item Batch Advisor forwards the complaint to the HOD via the portal.
-            \item Portal notifies the student that the complaint has been forwarded to the HOD.
+            \item BA forwards the complaint to the HOD via the system.
+            \item system notifies the student that the complaint has been forwarded to the HOD.
         \end{itemize}
     \end{itemize}
 
@@ -601,18 +601,18 @@ The complaint process follows a multi-stage review workflow involving the studen
     \begin{itemize}
         \item On rejection:
         \begin{itemize}
-            \item HOD rejects the complaint with remarks on the portal.
-            \item Portal notifies the student of the rejection.
+            \item HOD rejects the complaint with remarks on the system.
+            \item system notifies the student of the rejection.
         \end{itemize}
         \item On resolution:
         \begin{itemize}
-            \item HOD marks the complaint as resolved on the portal.
-            \item Portal notifies the student that the complaint has been resolved.
+            \item HOD marks the complaint as resolved on the system.
+            \item system notifies the student that the complaint has been resolved.
         \end{itemize}
         \item On reassignment:
         \begin{itemize}
-            \item HOD reassigns the complaint to another department via the portal.
-            \item Portal notifies the student that the complaint has been reassigned.
+            \item HOD reassigns the complaint to another department via the system.
+            \item system notifies the student that the complaint has been reassigned.
         \end{itemize}
     \end{itemize}
 \end{itemize}
@@ -621,149 +621,338 @@ The complaint process follows a multi-stage review workflow involving the studen
   \centering
   \includegraphics[width=\linewidth]{Figures/diagrams/seq/seq-compl.png}
   \caption{Sequence diagram - Student complaint}
-  \label{fig:seq-login}
+  \label{fig:seq-compl}
 \end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsubsection{Sequence Diagram – Announcement Creation and Scheduling}
-The announcement system supports immediate publishing, draft saving, and scheduled publishing via a background job scheduler. Authors with the HOD or Accountant role interact with the portal to create and manage announcements.
+\subsubsection{Sequence Diagram - Announcement Creation and Scheduling}
+The announcement system supports immediate publishing, draft saving, and scheduled publishing via a background job scheduler. Authors with the HOD or Accountant role interact with the system to create and manage announcements.
 
 \begin{itemize}
-    \item Author creates an announcement on the portal by providing a title, content, and target audience.
-    \item Portal verifies the author's profile against the database before proceeding.
+    \item Author creates an announcement on the system by providing a title, content, and target audience.
+    \item system verifies the author's profile against the database before proceeding.
     \item Database confirms the profile, allowing the operation to continue.
 
     \item Depending on the author's chosen publish option:
     \begin{itemize}
         \item On immediate publishing:
         \begin{itemize}
-            \item Portal inserts the announcement into the database with status \texttt{PUBLISHED}.
-            \item Portal confirms to the author that the announcement is live.
+            \item system inserts the announcement into the database with status \texttt{PUBLISHED}.
+            \item system confirms to the author that the announcement is live.
         \end{itemize}
         \item On saving as draft:
         \begin{itemize}
-            \item Portal inserts the announcement into the database with status \texttt{DRAFT}.
-            \item Portal confirms to the author that the draft has been saved.
+            \item system inserts the announcement into the database with status \texttt{DRAFT}.
+            \item system confirms to the author that the draft has been saved.
         \end{itemize}
         \item On scheduling for later:
         \begin{itemize}
-            \item Portal inserts the announcement into the database with status \texttt{SCHEDULED}.
-            \item Portal emits a scheduled event to the Inngest background scheduler.
-            \item Portal confirms to the author that the announcement has been scheduled.
+            \item system inserts the announcement into the database with status \texttt{SCHEDULED}.
+            \item system emits a scheduled event to the Inngest background scheduler.
+            \item system confirms to the author that the announcement has been scheduled.
             \item Inngest sleeps until the specified \texttt{scheduledFor} datetime is reached.
             \item Once triggered, Inngest updates the announcement status in the database to \texttt{PUBLISHED}.
         \end{itemize}
     \end{itemize}
 
-    \item Author views the announcement feed on the portal.
-    \item Portal queries the database for all \texttt{PUBLISHED} announcements filtered by the author's audience scope.
-    \item Database returns the matching announcement list to the portal.
-    \item Portal renders the feed and displays it to the author.
+    \item Author views the announcement feed on the system.
+    \item system queries the database for all \texttt{PUBLISHED} announcements filtered by the author's audience scope.
+    \item Database returns the matching announcement list to the system.
+    \item system renders the feed and displays it to the author.
 \end{itemize}
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=\linewidth]{Figures/diagrams/seq/seq-ann.png}
   \caption{Sequence diagram - Announcement}
-  \label{fig:seq-login}
+  \label{fig:seq-ann}
 \end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{State Transition Diagrams}
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.77\textwidth]{Figures/State Transition.png}
-\caption{Sample State Transition Diagram}
-\label{fig:usecase}
-\end{figure}
-
 State diagrams show how system or object changes states over time.
 
-\textbf{Examples:}
+\subsubsection{Leave request - State Transition:}
+
+A LR passes through five distinct states before it reaches a terminal
+outcome. The full life-cycle is driven by two sequential reviewers — the BA and the HOD. If accepted by BA and HOD, admin can update students attendance.
+
+\textbf{States}
+
+\begin{tabular}{ll}
+\toprule
+\textbf{State}            & \textbf{Description} \\
+\midrule
+\texttt{PENDING}          & Request submitted, awaiting BA review \\
+\texttt{REVIEW\_REQUESTED} & BA requested clarification / more details \\
+\texttt{HOD\_PENDING}     & BA accepted → awaiting HOD final decision \\
+\texttt{APPROVED}         & Leave approved (terminal state) \\
+\texttt{REJECTED}         & Leave rejected (terminal state) \\
+\bottomrule
+\end{tabular}
+
+\textbf{State Transitions}
+
 \begin{itemize}
-    \item User Account States (Registered → Active → Suspended → Deleted)
-    \item Order States (Created → Paid → Shipped → Delivered)
-    \item ML Model States (Initialized → Training → Trained → Deployed)
+  \item Student submits leave request
+    $\rightarrow$ status = \texttt{PENDING} (Department auto-set from student's profile)
+
+  \item While \texttt{PENDING}:
+    \begin{itemize}
+      \item Student can edit form or delete permanently
+      \item BA can:
+        \begin{itemize}
+          \item Request update/more info $\rightarrow$ \texttt{REVIEW\_REQUESTED}
+                + remarks saved
+          \item Reject $\rightarrow$ \texttt{REJECTED}
+                + remarks saved (terminal)
+          \item Accept $\rightarrow$ \texttt{HOD\_PENDING}
+                + remarks (optional)
+        \end{itemize}
+    \end{itemize}
+
+  \item While \texttt{REVIEW\_REQUESTED}:
+    \begin{itemize}
+      \item Student updates form and resubmits
+        $\rightarrow$ status resets to \texttt{PENDING}
+      \item Student can still delete
+    \end{itemize}
+
+  \item While \texttt{HOD\_PENDING}:
+    \begin{itemize}
+      \item HOD can:
+        \begin{itemize}
+          \item Reject $\rightarrow$ \texttt{REJECTED}
+                + remarks saved (terminal)
+          \item Accept $\rightarrow$ \texttt{APPROVED}
+                + remarks (optional) (terminal)
+        \end{itemize}
+    \end{itemize}
+
+
+  \item Terminal states:
+    \begin{itemize}
+      \item \texttt{APPROVED} $\quad\Rightarrow$ leave approved, attendance updated
+      \item \texttt{REJECTED} $\quad\Rightarrow$ leave denied, no further action
+    \end{itemize}
 \end{itemize}
 
-\textbf{Guidelines:}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{Figures/diagrams/state/st-lr1.png}
+  \caption{State transition - Leave request}
+  \label{fig:st-lr}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection{Complaint - State Transition}
+
+
+\textbf{States:}
+
 \begin{itemize}
-    \item Clearly define states.
-    \item Show triggering events.
-    \item Include transitions with conditions.
+  \item \textbf{BA\_PENDING} \quad initial state after student submission
+  \item \textbf{BA\_REVIEW\_REQUESTED} \quad BA needs more details
+  \item \textbf{BA\_REJECTED} \quad rejected by BA (student can update details)
+  \item \textbf{HOD\_PENDING} \quad escalated — awaiting HOD decision
+  \item \textbf{HOD\_ACCEPTED} \quad resolved / accepted by HOD (terminal)
+  \item \textbf{HOD\_REJECTED} \quad rejected by HOD (terminal)
+  \item \textbf{ASSIGNED} \quad HOD assigned to another department (terminal)
 \end{itemize}
+
+\textbf{Transitions}
+
+\begin{itemize}
+  \item \textbf{Student submits} $\to$ \texttt{BA\_PENDING}
+        \quad Department set from student profile
+
+  \item \textbf{Student edits} \quad \texttt{BA\_PENDING} $\to$ \texttt{BA\_PENDING}
+        \quad content updated, \texttt{ComplaintReview} entry written
+
+  \item \textbf{BA requests more info} \quad \texttt{BA\_PENDING} $\to$ \texttt{BA\_REVIEW\_REQUESTED}
+        \quad remarks saved, student notified
+
+  \item \textbf{Student resubmits (BA stage)} \quad \texttt{BA\_REVIEW\_REQUESTED} $\to$ \texttt{BA\_PENDING}
+        \quad updated content, \texttt{ComplaintReview} entry created, re-enters BA queue
+
+  \item \textbf{BA accepts} \quad \texttt{BA\_PENDING} $\to$ \texttt{HOD\_PENDING}
+        \quad remarks saved, \texttt{ComplaintReview} entry written, student notified
+
+  \item \textbf{BA rejects} \quad \texttt{BA\_PENDING} $\to$ \texttt{BA\_REJECTED}
+        \quad remarks saved, \texttt{ComplaintReview} entry written, student notified
+
+  \item \textbf{Student revises after rejection} \quad \texttt{BA\_REJECTED} $\to$ \texttt{BA\_PENDING}
+        \quad new \texttt{ComplaintReview} entry created
+
+  \item \textbf{Student deletes} \quad \texttt{BA\_PENDING} / \texttt{BA\_REVIEW\_REQUESTED} / \texttt{BA\_REJECTED} $\to$ [*]
+        \quad permanent removal + cascade delete of reviews \& assignments
+
+  \item \textbf{HOD accepts} \quad \texttt{HOD\_PENDING} $\to$ \texttt{HOD\_ACCEPTED}
+        \quad remarks saved, \texttt{ComplaintReview} entry written, student notified (resolved)
+
+  \item \textbf{HOD rejects} \quad \texttt{HOD\_PENDING} $\to$ \texttt{HOD\_REJECTED}
+        \quad remarks saved, \texttt{ComplaintReview} entry written, student notified (workflow ends)
+
+  \item \textbf{HOD assigns} \quad \texttt{HOD\_PENDING} $\to$ \texttt{ASSIGNED}
+        \quad new target department + reason, \texttt{targetDepartment} updated
+        \quad transaction writes: Complaint update → ASSIGNED, \texttt{ComplaintAssignment} log, \texttt{ComplaintReview} entry
+        \quad complaint terminal in assigned state, receiving department sees as assignment notification
+\end{itemize}
+ 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{Figures/diagrams/state/st-compl.png}
+  \caption{State transition - Complaint}
+  \label{fig:st-compl}
+\end{figure}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\subsubsection{Announcement - State Transition}
+
+
+\textbf{Flow:}
+
+\begin{itemize}
+  \item Author creates announcement and lands in \texttt{DRAFT}.
+  \item From \texttt{DRAFT}, author can publish now, schedule for later, or delete.
+  \item If \texttt{SCHEDULED}, a background job publishes automatically at \texttt{scheduledFor}.
+  \item Students only see \texttt{PUBLISHED} announcements (filtered by audience scope).
+  \item Published announcements can be archived and later restored.
+\end{itemize}
+
+\textbf{States:}
+
+\begin{itemize}
+  \item \textbf{DRAFT} \quad saved, not visible to students
+  \item \textbf{SCHEDULED} \quad queued for future publish
+  \item \textbf{PUBLISHED} \quad visible to students
+\end{itemize}
+
+\textbf{Transitions:}
+
+\begin{itemize}
+  \item \textbf{Save draft} $\to$ \texttt{DRAFT}
+  \item \textbf{Publish now} \quad \texttt{DRAFT} $\to$ \texttt{PUBLISHED}
+  \item \textbf{Schedule} \quad \texttt{DRAFT} $\to$ \texttt{SCHEDULED}
+  \item \textbf{Auto publish} \quad \texttt{SCHEDULED} $\to$ \texttt{PUBLISHED}
+  \item \textbf{Cancel schedule} \quad \texttt{SCHEDULED} $\to$ \texttt{DRAFT}
+  \item \textbf{Delete} \quad any active state $\to$ [*]
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{Figures/diagrams/state/st-ann.png}
+  \caption{State transition - Announcement}
+  \label{fig:st-ann}
+\end{figure}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \section{Data Flow Diagrams}
 
 Data Flow Diagrams (DFD) describe how data moves within the system.
 Different levels of DFD provide increasing detail.
 
-\subsection{Level 1 Data Flow Diagram}
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.9\textwidth]{Figures/DFD Sample.png}
-\caption{Sample Level 1 DFD}
-\label{fig:usecase}
-\end{figure}
+\subsection{Level 0 Data Flow Diagram}
 
 \textbf{Description:}
-Level 1 DFD decomposes the main system into major sub-processes.
+The Level 0 DFD (Context Diagram) represents the entire system as a single, high-level process to establish the system boundary. 
+It illustrates the interaction between the core system and its external entities, 
+which include Students, BAs (BA), Heads of Department (HOD), Accountants, and Administrators. Primary data flows—such as
+authentication details, leave requests, complaint submissions, fee installment processing, and announcements—are depicted to show 
+input and output data exchanges with the system without exposing internal processes or data storage.
 
-\textbf{Include:}
-\begin{itemize}
-    \item Authentication Module
-    \item Core Functional Module
-    \item Data Processing Module
-    \item Admin Module
-    \item Database/Data Store
-\end{itemize}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{Figures/diagrams/dfd/dfd-0.png}
+  \caption{Data flow - Level 0}
+  \label{fig:dfd-0}
+\end{figure}
 
-\textbf{Guidelines:}
-\begin{itemize}
-    \item Show internal processes.
-    \item Show data stores.
-    \item Maintain data flow consistency with Level 0.
-\end{itemize}
+
+\subsection{Level 1 Data Flow Diagram}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection{Leave request}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{Figures/diagrams/dfd/dfd-1-lr.png}
+  \caption{Data flow lvl-1 - Leave request}
+  \label{fig:dfd-1-lr}
+\end{figure}
+
+
+\subsubsection{Complaint}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{Figures/diagrams/dfd/dfd-1-compl.png}
+  \caption{Data flow lvl-1 - Complaint}
+  \label{fig:dfd-1-compl}
+\end{figure}
+
+
+\subsubsection{Fee installment}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{Figures/diagrams/dfd/dfd-1-fee.png}
+  \caption{Data flow lvl-1 - Fee installment}
+  \label{fig:dfd-1-fee}
+\end{figure}
+
+
+
+\subsubsection{Announcements}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{Figures/diagrams/dfd/dfd-1-ann.png}
+  \caption{Data flow lvl-1 - Announcements}
+  \label{fig:dfd-1-ann}
+\end{figure}
+
+
 \subsection{Level 2 Data Flow Diagram}
 
 \textbf{Description:}
 Level 2 DFD further decomposes one complex module from Level 1.
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.9\textwidth]{Figures/DFD Sample 2.png}
-\caption{Sample Level 2 DFD}
-\label{fig:usecase}
+\subsubsection{Leave requests}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{Figures/diagrams/dfd/dfd-2-lr.png}
+  \caption{Data flow lvl-2 - Leave requests}
+  \label{fig:dfd-2-lr}
 \end{figure}
 
-\textbf{Examples (Domain-based):}
 
-For Machine Learning:
-\begin{itemize}
-    \item Data Upload
-    \item Data Preprocessing
-    \item Model Training
-    \item Prediction Generation
-\end{itemize}
+\subsubsection{Complaint}
 
-For Web/Mobile:
-\begin{itemize}
-    \item Cart Processing
-    \item Payment Handling
-    \item Booking Workflow
-\end{itemize}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{Figures/diagrams/dfd/dfd-2-compl.png}
+  \caption{Data flow lvl-2 - complaint}
+  \label{fig:dfd-2-compl}
+\end{figure}
 
-For Blockchain:
-\begin{itemize}
-    \item Transaction Validation
-    \item Consensus Mechanism
-    \item Block Creation
-\end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Data Design}
@@ -772,82 +961,68 @@ This section describes how data is structured, stored, and managed.
 
 \textbf{Guidelines:}
 \begin{itemize}
-    \item Define database type (SQL / NoSQL).
-    \item Explain schema structure.
-    \item Describe indexing strategy.
-    \item Mention security mechanisms.
-    \item Discuss scalability considerations.
+    \item \textbf{Database Type:} The system uses \textbf{PostgreSQL} (a relational SQL database) managed via Prisma ORM. This enforces strict relational integrity, handles complex multi-step approval workflows via foreign keys, and safely manages status constraints using DB-level enums.
+
+    \item \textbf{Schema Structure:} The schema is highly normalized into distinct domains (Identity/Roles, Academic, Attendance/Leave, Announcements, and Complaints). Profile data (e.g., student, HOD) is separated from the core \texttt{user} table using 1:1 unique foreign keys. Processes like complaint reviews use immutable, append-only tables to maintain a complete audit trail.
+
+    \item \textbf{Indexing Strategy:} All primary keys utilize UUIDs to prevent sequential ID leakage. The strategy focuses on specific access patterns rather than blanket coverage—leveraging unique constraints to prevent duplicates (e.g., \texttt{studentId, offeringId, date} for leave requests) and utilizing compound indexes for high-frequency queries (e.g., \texttt{status, isPinned, publishedAt} for the announcement feed).
+
+    \item \textbf{Security Mechanisms:} Authentication is securely managed via \texttt{better-auth}. Every mutation enforces strict \texttt{requireSession} and \texttt{requirePermission} checks server-side. Additionally, queries use row-level scoping (restricting visibility to a user's own records or department), foreign keys utilize cascade deletes to prevent orphaned data, and Arcjet rate-limiting mitigates spam/burst traffic on mutations.
+    
+    \item \textbf{Scalability Considerations:} Time-sensitive operations (like scheduled announcements) are offloaded to \textbf{Inngest} background jobs. Read-heavy feeds are optimized via compound indexing, and append-only audit tables ensure high write volumes don't cause index hot spots.
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Entity Relationship Diagram (ERD)}
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.9\textwidth]{Figures/ER Diagram.png}
-\caption{Sample Entity Relation Diagram}
-\label{fig:usecase}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{Figures/diagrams/comsats-erd.png}
+  \caption{ERD}
+  \label{fig:erd}
 \end{figure}
 
-The Entity Relationship Diagram (ERD) represents the logical database structure of the system.
+The Entity Relationship Diagram (ERD) represents the logical database structure of the system, illustrating how user roles, academic data, workflows, and audit logs are connected.
 
-\textbf{Guidelines:}
 \begin{itemize}
-    \item Clearly identify all entities (tables/collections).
-    \item Highlight Primary Keys (PK).
-    \item Highlight Foreign Keys (FK).
-    \item Show relationship cardinality (1:1, 1:N, M:N).
-    \item Maintain consistency with database tables defined earlier.
+    \item \textbf{Entities (Tables):} The database is normalized into distinct domains:
+    \begin{itemize}
+        \item \textbf{User \& Auth Categories:} \texttt{user}, \texttt{session}, \texttt{account}, \texttt{verification}.
+        \item \textbf{User Role Profiles:} \texttt{student}, \texttt{professor}, \texttt{hod}, \texttt{batch\_advisor}, \texttt{accountant}, \texttt{director}.
+        \item \textbf{Core Functional \& Academic:} \texttt{subject}, \texttt{subject\_offering}, \texttt{enrollment}, \texttt{registration}, \texttt{teaching\_assignment}.
+        \item \textbf{Workflows (Leaves \& Complaints):} \texttt{leave\_request}, \texttt{attendance\_record}, \texttt{student\_attendance}, \texttt{complaint}, \texttt{announcement}.
+        \item \textbf{Logs \& Transactions:} \texttt{complaint\_review}, \texttt{complaint\_assignment}.
+    \end{itemize}
+    \item \textbf{Primary Keys (PK):} Every table utilizes a UUID \texttt{id} as its primary key. This prevents sequential ID enumeration and uniquely identifies each record securely across all domains.
+    \item \textbf{Foreign Keys (FK):} Relational integrity is enforced using foreign keys such as \texttt{userId}, \texttt{studentId}, \texttt{offeringId}, and \texttt{complaintId}. These keys ensure valid references between tables (e.g., a \texttt{leave\_request} must reference a valid \texttt{studentId} and \texttt{offeringId}) and facilitate features like cascade deletes where appropriate.
+    \item \textbf{Relationship Cardinalities:}
+    \begin{itemize}
+        \item \textbf{1:1 (One-to-One):} E.g., \texttt{user} to role profiles (a user can have exactly one \texttt{student} or \texttt{professor} profile), \texttt{subject\_offering} to \texttt{teaching\_assignment} (one professor per offering).
+        \item \textbf{1:N (One-to-Many):} E.g., \texttt{user} to \texttt{session}, \texttt{student} to \texttt{leave\_request}, \texttt{offering} to \texttt{attendance\_record}, \texttt{complaint} to \texttt{complaint\_review} log entries.
+        \item \textbf{M:N (Many-to-Many):} E.g., \texttt{student} and \texttt{subject\_offering} (resolved via the \texttt{enrollment} junction table), where a student can enroll in many offerings and an offering has many students.
+    \end{itemize}
 \end{itemize}
-
-\textbf{Include in ERD:}
-\begin{itemize}
-    \item User Entity
-    \item Core Functional Entities (domain-based)
-    \item Transaction/Log Entity
-    \item Administrative Entity (if applicable)
-\end{itemize}
-
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Database Architecture}
 
-Explain:
-\begin{itemize}
-    \item Client-Server Architecture
-    \item Cloud Storage (if applicable)
-    \item Distributed Storage (for Blockchain/ML)
-\end{itemize}
+\subsubsection{Client-server architecture}:
+
+The portal follows a standard three-tier client-server model. The browser (client) communicates exclusively with Next.js server actions — no direct DB access from the client. Prisma ORM sits between the application layer and PostgreSQL, handling query building and type safety. Better-auth manages session validation on every request before any business logic or DB query executes.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Database Schema Diagram}
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.9\textwidth]{Figures/Database Diagram.png}
-\caption{Sample Database Diagram}
-\label{fig:usecase}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{Figures/diagrams/comsats-erd.png}
+  \caption{Database schema diagram}
+  \label{fig:db-schema}
 \end{figure}
 
-The Database Schema Diagram represents the physical database implementation structure.
 
-\textbf{Guidelines:}
-\begin{itemize}
-    \item Show actual table structure.
-    \item Include column names and data types.
-    \item Show PK and FK relationships.
-    \item Reflect normalization level (1NF, 2NF, 3NF if applicable).
-\end{itemize}
-
-\textbf{Explanation (50–80 words in final report):}
-Explain how the schema supports:
-\begin{itemize}
-    \item Data integrity
-    \item Efficient querying
-    \item Scalability
-    \item Security
-\end{itemize}
+The Database Schema Diagram visually represents the physical database implementation, mapping the core system modules—including identity management, academic structures, targeted operational workflows, and immutable audit logs—along with their relational bindings and cardinality constraints. The schema ensures \textbf{data integrity} using strict PostgreSQL relational constraints, unique foreign keys with cascade deletes, and DB-level enums managed by Prisma ORM. \textbf{Efficient querying} is achieved through targeted compound indexes optimized for frequent read operations, such as announcement feeds. For \textbf{scalability}, UUID primary keys prevent database index hotspots, while immutable append-only audit tables smoothly handle growing data volumes. Lastly, \textbf{security} is maintained by Better-Auth's session management—storing only hashed credentials—alongside Arcjet rate-limiting on database mutations.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -855,86 +1030,129 @@ Explain how the schema supports:
 
 Data Dictionary defines structure of all data elements.
 
-\textbf{Guidelines:}
-\begin{itemize}
-    \item Include field name
-    \item Data type
-    \item Size
-    \item Description
-    \item Constraints
-\end{itemize}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{table}[h]
+\begin{table}[H]
 \centering
-\caption{Sample Data Dictionary – User Table}
-\begin{tabularx}{\textwidth}{|p{3cm}|p{2cm}|p{2cm}|X|}
+\caption{Data Dictionary – User and Auth Fields}
+\begin{tabularx}{\textwidth}{|p{2.5cm}|p{2cm}|p{1.2cm}|X|p{2.5cm}|}
 \hline
-\textbf{Field Name} & \textbf{Type} & \textbf{Size} & \textbf{Description} \\
+\textbf{Field Name} & \textbf{Data Type} & \textbf{Size} & \textbf{Description} & \textbf{Constraints} \\
 \hline
-user\_id & INT & 11 & Unique identifier for each user \\
+id & UUID & 36 & Unique identifier for records & PK \\
 \hline
-username & VARCHAR & 100 & Name chosen by user \\
+email & String & 255 & User email address & Required, Unique \\
 \hline
-email & VARCHAR & 150 & Registered email address \\
+name & String & 255 & Full name of the user & Required \\
 \hline
-password & VARCHAR & 255 & Encrypted password \\
+role & Enum & - & Access role designation & Required \\
 \hline
-role & VARCHAR & 50 & User type (Admin/User) \\
+password & String & 255 & Hashed user password & Required \\
+\hline
+token & String & 255 & Active session token & Required, Unique \\
+\hline
+expiresAt & DateTime & - & Expiry for sessions/tokens & Required \\
+\hline
+banned & Boolean & - & Account suspension flag & Default False \\
 \hline
 \end{tabularx}
 \end{table}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%===========================================================
-\section{Database Tables / Collections}
-%===========================================================
-
-This section describes the logical database design of the system. It presents the major relational tables (for SQL-based systems) or collections (for NoSQL-based systems). The database structure is designed to ensure data consistency, integrity, security, and scalability.
-
-Each table or collection includes primary keys, relationships, and major attributes relevant to system functionality.
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{User Collection / Table}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-The User table stores authentication credentials and user profile information. It supports role-based access control and secure authentication.
-
-\textbf{Description:}
-\begin{itemize}
-    \item Primary Key: \texttt{user\_id}
-    \item Relationships: Linked to transactions, predictions, or system logs.
-    \item Authentication Attributes: Email, password hash, role, account status.
-\end{itemize}
-
-\begin{table}[h]
+\begin{table}[H]
 \centering
-\caption{User Table Structure}
-
-\begin{tabularx}{\textwidth}{|p{3cm}|p{3cm}|p{3cm}|X|}
+\caption{Data Dictionary – Role Profile Fields}
+\begin{tabularx}{\textwidth}{|p{2.5cm}|p{2cm}|p{1.2cm}|X|p{3cm}|}
 \hline
-\textbf{Field Name} & \textbf{Data Type} & \textbf{Constraint} & \textbf{Description} \\
+\textbf{Field Name} & \textbf{Data Type} & \textbf{Size} & \textbf{Description} & \textbf{Constraints} \\
 \hline
-user\_id & INT / UUID & Primary Key & Unique identifier for each user \\
+userId & UUID & 36 & Parent user mapping & FK, Required, Unique \\
 \hline
-full\_name & VARCHAR(100) & Not Null & Stores user’s full name \\
+registrationNo & String & 50 & Unique student identifier & Required, Unique \\
 \hline
-email & VARCHAR(150) & Unique, Not Null & User login email address \\
+employeeNo & String & 50 & Unique employee identifier & Required, Unique \\
 \hline
-password\_hash & VARCHAR(255) & Not Null & Encrypted password using hashing algorithm \\
+department & String & 100 & Base department for user & Required \\
 \hline
-role & VARCHAR(50) & Not Null & Defines user access level (Admin, User, etc.) \\
+program & String & 100 & Degree program & Required \\
 \hline
-created\_at & TIMESTAMP & Default Current & Account creation timestamp \\
-\hline
-status & BOOLEAN & Default True & Indicates whether account is active \\
+appointedAt & DateTime & - & Date BA was appointed & Required \\
 \hline
 \end{tabularx}
-
 \end{table}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{table}[H]
+\centering
+\caption{Data Dictionary – Academic Fields}
+\begin{tabularx}{\textwidth}{|p{2.5cm}|p{2cm}|p{1.2cm}|X|p{3cm}|}
+\hline
+\textbf{Field Name} & \textbf{Data Type} & \textbf{Size} & \textbf{Description} & \textbf{Constraints} \\
+\hline
+subjectId & UUID & 36 & Reference to global subject & FK, Required \\
+\hline
+code & String & 20 & Global subject code & Required, Unique \\
+\hline
+creditHours & Int & 2 & Credit hours for subject & Required, > 0 \\
+\hline
+semester & Int & 2 & Current offering semester & Required \\
+\hline
+year & Int & 4 & Academic calendar year & Required \\
+\hline
+section & String & 10 & Class section identifier & Optional \\
+\hline
+totalLectures & Int & 3 & Count of semester lectures & Required, Default 0 \\
+\hline
+\end{tabularx}
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{table}[H]
+\centering
+\caption{Data Dictionary – Operational Fields}
+\begin{tabularx}{\textwidth}{|p{2.5cm}|p{2cm}|p{1.2cm}|X|p{3cm}|}
+\hline
+\textbf{Field Name} & \textbf{Data Type} & \textbf{Size} & \textbf{Description} & \textbf{Constraints} \\
+\hline
+status & Enum & - & Current workflow progress state & Required \\
+\hline
+date & Date & - & Target date for leave/attendance & Required \\
+\hline
+title & String & 255 & Header for announcements & Required \\
+\hline
+category & String & 100 & Classification metric for reports & Required \\
+\hline
+targetDepartment& String & 100 & Recipient department routing & Required \\
+\hline
+scheduledFor & DateTime & - & Future publish timestamp & Optional \\
+\hline
+isPinned & Boolean & - & Dashboard priority rendering & Default False \\
+\hline
+\end{tabularx}
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{table}[H]
+\centering
+\caption{Data Dictionary – Audit and Log Fields}
+\begin{tabularx}{\textwidth}{|p{2.5cm}|p{2cm}|p{1.2cm}|X|p{3cm}|}
+\hline
+\textbf{Field Name} & \textbf{Data Type} & \textbf{Size} & \textbf{Description} & \textbf{Constraints} \\
+\hline
+complaintId & UUID & 36 & Parent ticket reference & FK, Required \\
+\hline
+action & String & 50 & Audit action performed & Required \\
+\hline
+actorRole & Enum & - & Role of the acting user & Required \\
+\hline
+fromStatus & Enum & - & Previous workflow state & Required \\
+\hline
+toStatus & Enum & - & Resulting workflow state & Required \\
+\hline
+remarks & Text & - & Reviewer qualitative notes & Optional \\
+\hline
+fromDepartment & String & 100 & Original department assignment& Required \\
+\hline
+\end{tabularx}
+\end{table}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -942,37 +1160,20 @@ status & BOOLEAN & Default True & Indicates whether account is active \\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 This subsection describes domain-specific core data tables or collections. These structures store primary operational data processed by the system.
-
-\textbf{Domain-Specific Examples:}
-
-\textbf{For Machine Learning Systems:}
 \begin{itemize}
-    \item Dataset Collection – Stores training and testing datasets.
-    \item Model Metadata Collection – Stores model version, hyperparameters, and evaluation metrics.
-    \item Prediction Results Collection – Stores inference results and timestamps.
+    \item User Table - Stores authentication and role-based identity data.
+    \item Student Table - Stores student profile and academic program details.
+    \item Professor Table - Stores faculty profile and departmental data.
+    \item Subject Offering Table - Stores semester-wise subject allocation details.
+    \item Registration Table - Stores student registration requests and status.
+    \item Enrollment Table - Stores subject enrollment records for students.
+    \item Attendance Record Table - Stores lecture-wise attendance sessions.
+    \item Student Attendance Table - Stores attendance status for each student in a session.
+    \item Leave Request Table - Stores student leave applications and approval status.
+    \item Complaint Table - Stores student complaint records and department routing.
+    \item Announcement Table - Stores notices and communication posted by staff.
+    \item Review Tables - Stores workflow logs for leave requests, complaints, and registrations.
 \end{itemize}
-
-\textbf{For Web-Based Systems:}
-\begin{itemize}
-    \item Orders Table – Stores customer purchase records.
-    \item Products Table – Stores product details and pricing.
-    \item Transactions Table – Stores payment and transaction history.
-\end{itemize}
-
-\textbf{For Mobile Applications:}
-\begin{itemize}
-    \item Device Info Table – Stores device metadata.
-    \item Session Table – Tracks active user sessions.
-\end{itemize}
-
-\textbf{For Blockchain-Based Systems:}
-\begin{itemize}
-    \item Transaction Collection – Stores blockchain transaction records.
-    \item Wallet Collection – Stores wallet identifiers and balances.
-    \item Block Metadata Collection – Stores block hash, timestamp, and validation status.
-\end{itemize}
-
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Relationships Between Tables}
@@ -981,14 +1182,12 @@ This subsection describes domain-specific core data tables or collections. These
 Database relationships define how data entities are connected within the system.
 
 \begin{itemize}
-    \item \textbf{One-to-One (1:1):} Each user may have one profile detail record.
-    \item \textbf{One-to-Many (1:N):} One user may generate multiple transactions or predictions.
-    \item \textbf{Many-to-Many (M:N):} Users may interact with multiple products, and products may belong to multiple categories (resolved using junction tables).
+    \item \textbf{One-to-One (1:1):} Each user may have one role-specific profile record such as Student, Professor, HOD, Clerk, Accountant, Director, or Batch Advisor.
+    \item \textbf{One-to-Many (1:N):} One user may create multiple announcements, one student may submit multiple leave requests or complaints, and one subject offering may have multiple attendance records.
+    \item \textbf{Many-to-Many (M:N):} Students may enroll in multiple subject offerings, and each subject offering may contain many students. This relationship is resolved using the Enrollment table.
 \end{itemize}
 
 An Entity-Relationship (ER) Diagram should be included to visually represent these relationships.
-
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Security and Data Integrity}
@@ -997,27 +1196,25 @@ An Entity-Relationship (ER) Diagram should be included to visually represent the
 To ensure confidentiality and integrity of stored data, the following measures are implemented:
 
 \begin{itemize}
-    \item Password Encryption using secure hashing algorithms (e.g., bcrypt, SHA-256 with salt).
-    \item Role-Based Access Control (RBAC) to restrict unauthorized access.
-    \item Input validation and constraint enforcement at database level.
-    \item Secure communication using HTTPS.
-    \item Regular database backup and disaster recovery strategy.
+    \item Passwords are stored using secure hashing algorithms.
+    \item Role-Based Access Control (RBAC) is used to restrict access based on user roles.
+    \item Database constraints such as primary keys, foreign keys, unique fields, and not-null rules are enforced.
+    \item Input validation is applied to prevent invalid or unsafe data entry.
 \end{itemize}
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Scalability Considerations}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-The database design incorporates scalability mechanisms to support future growth.
+The database design incorporates scalability mechanisms to support future growth and increasing user load.
 
 \begin{itemize}
-    \item Horizontal Scaling using distributed database systems (if required).
-    \item Indexing on frequently queried attributes to improve performance.
-    \item Caching strategies for frequently accessed data.
-    \item Load balancing across database instances.
-    \item Partitioning or sharding for large-scale data environments.
+    \item Indexing is applied on frequently queried fields such as user roles, department, status, and foreign keys to improve query performance.
+    \item Caching may be used for frequently accessed records such as announcements, semester data, and subject offerings.
+    \item Database queries are structured to minimize unnecessary joins and support efficient retrieval.
+    \item Data growth can be managed through partitioning of large transactional tables such as attendance and review logs if needed in the future.
+    \item The system is designed to support scaling of the application layer and database layer as demand increases.
 \end{itemize}
 
 

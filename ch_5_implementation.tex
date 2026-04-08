@@ -4,9 +4,7 @@
 
 \chapter{Implementation}
 
-This chapter describes the practical implementation of the proposed system.
-It explains how the designed architecture was translated into working modules,
-algorithms, user interfaces, and deployment components.
+This chapter details the practical realization of the proposed system. It maps the architectural design to specific functional modules, algorithms, interface layouts, and deployment configurations.
 
 % -------------------------------------------------
 % 5.1 Development Environment
@@ -14,12 +12,7 @@ algorithms, user interfaces, and deployment components.
 
 \section{Development Environment}
 
-This section describes the software and hardware environment used
-for system implementation.
-
-\section{Development Environment}
-
-This section describes the software and hardware environment used for system implementation.
+This section outlines the software frameworks and hardware configurations employed during the system's development and deployment.
 
 \subsection{Software Environment}
 
@@ -61,53 +54,60 @@ For each module:
 \subsection{Module 1: Registration}
 
 \textbf{Purpose:}
-To register user in the system.
+To register new users within the platform.
 
 \textbf{Functionality:}
-Portal shows register form with inputs for name, email and password. Page shows errors as user types in inputs like valid email, name with min character length 3 and password with min 8 characters.
+The portal presents a registration form requiring a name, email address, and password. Client-side validation provides real-time feedback, ensuring the name exceeds three characters, the password contains at least eight characters, and the email format is valid.
 
-\textbf{Important functions:}
+\textbf{Important Functions:}
 
 \textbf{SignUp:}
-When user submits form, server action parses values submitted by user, if inputs are invalid, it shows error, and function is blocked further processing to prevent malicious users calling server action. If success, then user is signed up using email, password. The session token is saved in browser for 7 days. If user uses session within 7 days, the token is refreshed automatically, and updates expiry date to next 7 days. If session token is expired, user is logged out and will need to login again.
-
+Upon form submission, a server-side action parses the input payload. Invalid submissions are immediately rejected to prevent malicious calls. Upon successful validation, the system registers the account using the provided credentials. A secure session token is subsequently stored in the browser, valid for seven days. This token is automatically refreshed upon active use within the validity window; otherwise, the session expires and re-authentication is required.
 
 \textbf{SendEmail:}
-The system first checks if it is development environment and then logs verification link in console; otherwise if the production environment, it sends email to the user. When user clicks on the link from console or email, user is automatically logged in. The link expires in 5 minutes, if user clicks on expired link, it shows expired link and asks user to request new link for verification.
+In a development environment, the system logs the verification link to the console for debugging. In a production environment, it dispatches an automated verification email. Following the link immediately authenticates the user. This link has a strict five-minute expiration window; expired links redirect the user to request a fresh verification token.
 
 \subsection{Module 2: Login}
 
 \textbf{Purpose:}
-To login user in the system.
+To authenticate existing users into the system.
 
 \textbf{Functionality:}
-The system first checks if browser already has session token and is  not expired, then redirect user back to home page, because user is already logged in and no need to login again. Login form shows errors like invalid email and password length less than 8 characters as user types. It shows invalid email or password if user entered wrong credentials.
+The system first verifies the presence of an active session token. If a valid token is found, the user is automatically redirected to the dashboard, bypassing the login interface. The login form provides real-time validation for email formatting and password minimum length constraints. It returns standardized error messages for incorrect credentials to prevent credential enumeration.
 
-\textbf{Important functions:}
+\textbf{Important Functions:}
 
-\textbf{Email verification:}
-If email is already verified, then the user is automatically logged in, otherwise it shows email not verified.
+\textbf{Email Verification:}
+The authentication flow verifies the account's email status. If the email remains unverified, the system prompts the user to complete verification before granting access.
 
 \subsection{Module 3: Student Request Leave}
 \textbf{Purpose:}
-Allows students to formally request leave for a specific subject on a specific date. The request is reviewed by the BA and the HOD.
+Allows students to formally submit leave requests for specific lectures. These requests are subsequently routed to the Batch Advisor (BA) and Head of Department (HOD) for review.
 
 \textbf{Functionality:}
 
 \begin{itemize}
 \item The student selects:
 \begin{itemize}
-\item The subject (from currently registered courses only)
-\item The lecture date.
-\item Reason / description (text area)
-\item Optional supporting document upload (image, max size 5 MB)
+\item The target subject (restricted to currently registered courses)
+\item The specific lecture date
+\item A detailed reason or description
+\item An optional supporting document (image format, capped at 5 MB)
 \end{itemize}
-\item Real-time client-side validation is performed as the user types / selects:
+\item Real-time client-side validation enforces constraints during data entry:
 \begin{itemize}
-\item Duplicate check: whether the student has already submitted a leave request for the same subject on the same lecture date
-\item Subject registration verification: confirms the selected subject is part of the student's current registered courses
+\item Duplicate check: verifies whether a leave request already exists for the identical subject and date
+\item Subject registration verification: ensures the selected course matches the student's active enrollment profile
 \end{itemize}
-\item If a duplicate exists, an immediate error message is displayed (e.g., You have already submitted a leave request for this lecture.'') \item On form submission, a server-side action re-validates all conditions:   \begin{itemize}   \item Subject must be offered in the current semester   \item Student must be registered in the subject   \item No existing approved / pending leave request for the same lecture   \end{itemize} \item If validation fails, the request is rejected and specific error messages are returned to the client. \item On success, a new Leave Request record is created in the database with status Pending'' and assigned to the student's Batch Advisor (BA).
+\item If a duplicate is detected, an immediate error message is displayed.
+\item Upon form submission, a server-side action re-validates the constraints:
+  \begin{itemize}
+  \item The subject must be offered in the current semester
+  \item The student must be formally registered in the subject
+  \item There must be no pre-existing pending or approved leave request for the same session
+  \end{itemize}
+\item Failed validations trigger a rejection and present localized error messages to the client. 
+\item Upon success, the system instantiates a new leave request record with a \texttt{PENDING} status, assigning it to the corresponding Batch Advisor.
 \end{itemize}
 
 \textbf{Important functions:}
@@ -129,27 +129,26 @@ Allows students to formally request leave for a specific subject on a specific d
 \end{itemize}
 Enrollment/subjects.
 
-\subsection{Module 4: students announcement module:}
+\subsection{Module 4: Student Announcements}
 \textbf{Purpose:}
-Displays department-targeted announcements from HODs/accountant or admin to students, with smart filtering based on the student's department, program.
+Displays targeted administrative and departmental announcements to students, using contextual filtering based on their specific program and department.
 
 \textbf{Functionality:}
 \begin{itemize}
-    \item \textbf{Filtered Feed:} Shows only announcements matching the student's department / program, plus broadcasts (\verb|null| targets)
-    \item \textbf{Pin support:} Pinned announcements float to the top, newly created on the top.
-    \item \textbf{Details view:} Full announcement page with image, content, author, and publish date
-    \item \textbf{Responsice Sidebar:} Right sidebar shows a preview list on student layout, which shows up in desktop screens.
-    \item \textbf{Suspense + Skeletons:} Both list and detail views stream in with loading skeletons.
+    \item \textbf{Filtered Feed:} Restricts the announcement feed to match the student's departmental affiliation, alongside system-wide broadcasts.
+    \item \textbf{Pin Support:} Prioritizes pinned announcements at the top of the feed, sorting the remainder chronologically.
+    \item \textbf{Details View:} Dedicated interface rendering the complete announcement payload, including attached media, timestamps, and authorship.
+    \item \textbf{Responsive Sidebar:} A contextual right sidebar surfaces a preview feed on desktop layouts.
+    \item \textbf{Asynchronous Loading:} Implements React Suspense boundaries and skeleton loaders to stream list and detail views smoothly.
 \end{itemize}
 
-\textbf{Important functions:}
+\textbf{Important Functions:}
 
 \begin{itemize}
-\item \textbf{studentGetAllAnnouncements:} Checks resolves the student's department/program from their registration number, builds a scoped Prisma clause, orders by isPinned desc and createdAt desc.
-    \item \textbf{studentGetAnnouncemntById:} fetches a single announcement for the detail page.
-    \item Announcement details page: async RSC showing full content + optional image display.
-    \item Right sidebar: wraps in Suspense on every student layout page
-
+    \item \textbf{studentGetAllAnnouncements:} Resolves the student's active department from their registration record, constructs a scoped Prisma query clause, and applies the sorting logic for pinned and recent items.
+    \item \textbf{studentGetAnnouncementById:} Retrieves the full payload of a discrete announcement for the dedicated detail view.
+    \item \textbf{Announcement Details View:} An asynchronous React Server Component responsible for rendering markdown content and managing authorized S3 image resolution.
+    \item \textbf{Global Sidebar Injector:} Wraps the announcement feed in a Suspense boundary to surface it passively across all student-facing layouts.
 \end{itemize}
 
 
@@ -161,25 +160,25 @@ Displays department-targeted announcements from HODs/accountant or admin to stud
     \item Student Layout / Sidebar: Right sidebar surfaces the latest announcements passively across all student pages.
 \end{itemize}
 
-\subsection{Module 5: Student Complaints module:}
+\subsection{Module 5: Student Complaints}
 \textbf{Purpose:}
-Allows students to formally raise academic or administrative complaints. Each complaint passes through a multi-stage review pipeline: BA (Batch Advisor) → HOD.
+Supports the formal submission of academic and administrative grievances by students. Complaints enter a multi-stage review pipeline, escalating progressively through the Batch Advisor to the Head of Department.
 
 \subsubsection{Key Functionalities:}
 \begin{itemize}
-    \item \textbf{Create:} Title, details, category (enum), optional image upload, shows errors as user types
-    \item \textbf{Update:} Editable only when status == BA PENDING
-    \item \textbf{Delete:} Single or bulk delete via confirmation dialog.
-    \item \textbf{Table View:} Paginated table with sort, filter by status/category/date/attachment
-    \item \textbf{Details Page:} Full complaint card with HOD remarks, attachment, status badge.
+    \item \textbf{Creation Interface:} Captures the complaint's title, descriptive details, categorical classification, and optional supporting images, offering real-time input validation.
+    \item \textbf{Modification Constraints:} Restricts editing capabilities strictly to the initial \texttt{BA\_PENDING} state.
+    \item \textbf{Deletion:} Supports individual and batch removal of complaints via synchronized confirmation modals.
+    \item \textbf{Interactive Data Grid:} Presents a paginated table interface supporting complex sorting and multidimensional filtering (by status, category, date, and attachments).
+    \item \textbf{Detail View:} Renders a detailed complaint card overlaying hierarchical metadata, administrative remarks, and attached evidence.
 \end{itemize}
 
-\textbf{Important functions:}
+\textbf{Important Functions:}
 
 \begin{itemize}
-    \item zodSchema for form validation before submitting form and in server-actions to check inputs.
-    \item server-action: checks Only authenticated users can submit complaint, gets department from current user data and creates complaint.
-    \item Data Fetcher: fetches dynamic complaints to show on complaints page with filters, only shows student's own complaints.
+    \item \textbf{Schema Validation:} Employs structured Zod schemas to guarantee data integrity both at the client interface and within the receiving server action.
+    \item \textbf{Server Action Pipeline:} Authenticates the active session, extracts the student's departmental affiliation from their user profile, and constructs the resulting database entity.
+    \item \textbf{Data Fetcher:} Executes a dynamically scoped database query to populate the complaints table, strictly isolating the results to the authenticated student's authored records.
 \end{itemize}
 
 \textbf{Integration with other modules:}
@@ -194,14 +193,14 @@ Allows students to formally raise academic or administrative complaints. Each co
 
 \subsection{Module 6: Admin user mangement:}
 \textbf{Purpose:}
-Admin can change any user's role, assign a department to professors, and appoint professors as Batch Advisors — each via a dedicated confirmation dialog.
+Admin can change any user's role, assign a department to professors, and appoint professors as Batch Advisors (each via a dedicated confirmation dialog).
 
-\textbf{Key functionality:}
+\textbf{Key Functionality:}
 \begin{itemize}
-    \item \textbf{User Listing and Filtering:} Retrieves a paginated list of platform users. It supports advanced server-side filtering by user roles, complex search queries (by name or email), and dynamic sorting, optimizing performance for large datasets.
-    \item \textbf{Role Management:} Allows administrators to elevate or modify user roles (such as Professor, Accountant, Director, etc.). It automates the cleanup of old profile data and initializes new profile records atomically.
-    \item \textbf{Department Assignment:} Provides the ability to assign or reassign departments to Professors, ensuring administrative structure is maintained. It includes built-in safeguards, such as preventing department reassignment for active Batch Advisors to avoid data desynchronization.
-    \item \textbf{Batch Advisor Appointment:} A server-action to appoint a Professor as a Batch Advisor for their respective department. It uses business rules, such as ensuring the department does not already have an active Batch Advisor.
+    \item \textbf{User Listing and Filtering:} Surfaces a paginated directory of platform users, executing minimal-latency server-side operations for role filtering, free-text search, and dynamic sorting over large datasets.
+    \item \textbf{Role Management:} Supports the smooth elevation or modification of access tiers (e.g., granting Professor, Accountant, or Director privileges). The action automates the atomic removal of stale profile metadata and instantiates fresh structural records.
+    \item \textbf{Departmental Allocation:} Enables the dynamic mapping of professors to respective departments while preserving organizational constraints. It enforces protective invariants, such as blocking the reassignment of active Batch Advisors to prevent cascading data inconsistencies.
+    \item \textbf{Advisor Elevation Workflow:} Manages the transactional logic required to appoint a professor to the Batch Advisor role, ensuring compliance with business rules (e.g., verifying the target department lacks a preexisting advisor).
 \end{itemize}
 
 \textbf{Important Classes and Functions}
@@ -220,19 +219,18 @@ Admin can change any user's role, assign a department to professors, and appoint
     \item \textbf{Frontend UI Components:} The table uses dropdown for actions like view details and update user-role using confirmation dialog.
 \end{itemize}
 
-\subsection{Module 7: HOD creates ANN:}
+\subsection{Module 7: Head of Department Announcements}
 
 \textbf{Purpose:}
-The HOD Announcements module gives HODs to create announcements for their respective departments. Students can view the published announcements, whereas the HOD manages drafting, scheduling, ANN from their dashboard.
+Provides department heads with a dedicated module to author, broadcast, and schedule administrative announcements tailored to their respective student bodies.
 
-
-\textbf{Key functionality:}
+\textbf{Key Functionality:}
 \begin{itemize}
-    \item \textbf{Creating Announcements}: HOD can create announcement. The creation flow includes options for tagging announcement types, pinning, and attaching images. Announcements can be published immediately or scheduled up to 2 days in the future via an automated queue using cron-jobs.
-    \item \textbf{Scheduling}: Announcements can be scheduled up to two days in advance. Scheduled announcements utilize an event-driven background job (Inngest) to handle the delayed publication automatically.
-    \item \textbf{Fetching Announcements}: The module implements paginated data fetching with filters. HODs can search by free text, date ranges, announcement status (e.g., Draft, Scheduled, Published), type, and attachments.
-    \item \textbf{Bulk Operations}: Announcemetn Table provides convenience of bulk actions, allowing HODs to delete multiple announcements at once or update the status of several announcements simultaneously.
-        \item \textbf{Displaying Details}: A dedicated drawer interface previews individual announcement details, rendering image attachments, and itemizing metadata (creation, scheduled, and published timestamps).
+    \item \textbf{Authoring Interface}: Supports the creation of rich announcements, supporting categorical tagging, timeline pinning, and image attachments. Payloads may be broadcast immediately or queued for delayed publication.
+    \item \textbf{Asynchronous Scheduling}: Supports deferring announcements up to 48 hours into the future. The system relies on a reliable event-driven message queue (Inngest) to manage the background delivery state without manual intervention.
+    \item \textbf{Data Retrieval}: Implements a solid paginated querying system with multi-dimensional filtering. The governing HOD can slice the dataset chronologically, temporally (Draft, Scheduled, Published), or by specialized parameters like attachment existence.
+    \item \textbf{Bulk Data Operations}: Equips the management interface with batch processing capabilities, allowing administrators to modify or delete multiple entries simultaneously.
+    \item \textbf{Detail Inspection}: Integrates a non-obtrusive drawer overlay to preview granular details, verifying rendering fidelity for attachments and specific temporal metadata markers before final publication.
 \end{itemize}
 
 \textbf{Integration With Other Modules}
@@ -247,14 +245,14 @@ The HOD Announcements module gives HODs to create announcements for their respec
 
 \section{Algorithm Implementation}
 
-This section explains the implementation of the core prediction algorithm used in the system.
+This section structures the core business logic algorithms responsible for driving the platform's defining modules.
 
 \subsection{Algorithm 1: User Registration}
 
 \textbf{Input:} User registration details including $name$, $email$, and $password$ \\
 \textbf{Output:} An API response object indicating success or failure \\
 
-The algorithm securely processes new user registrations by validating input credentials against register schema. Valid inputs are then sent to the authentication API to register a new user record.
+The algorithm securely maps new user registrations by strictly validating payload inputs against the required formatting schema. Conforming credentials are incrementally passed to the authentication layer to establish a definitive profile record.
 
 \begin{algorithm}[H]
 \caption{User Registration Process}
@@ -398,7 +396,7 @@ The algorithm handles the creation of a new grievance or query by a student. It 
 \subsection{Algorithm 4: Submit Student Leave Request}
 
 \textbf{Input:} A session containing the $student\_id$ and leave request data containing $date$, $reasonTitle$, $reasonDetails$, $subjectId$, and $imageKey$ \\
-\textbf{Output:} An API response object indicating whether the leave request was processed and accepted \\
+\textbf{Output:} An API response object indicating whether the leave request was processed and approved \\
 
 The algorithm captures a student's request for leave for a specific lecture session. It verifies the active user's authorization, validates the form schema and confirms the student's active enrollment in the referenced subject offering. It proactively prevents duplicate submissions.
 
@@ -432,7 +430,7 @@ The algorithm captures a student's request for leave for a specific lecture sess
         \State \Return $\{status: \text{"error"}, message: \text{"Subject offering not found"}\}$
     \EndIf
 
-    \State \Comment{Verify the student is actually enrolled in this offering}
+    \State \Comment{Verify the student is enrolled in this offering}
     \State $enrollment \gets Database.Enrollment.Find(studentId: student\_id, offeringId: offering.id)$
 
     \If{$enrollment$ \textbf{is} $null$}
@@ -469,6 +467,8 @@ The algorithm captures a student's request for leave for a specific lecture sess
 
 \end{algorithmic}
 \end{algorithm}
+
+\textit{Note: The algorithms for the Batch Advisor and Head of Department review phases of the Leave Request flow structurally mirror the general departmental review mechanisms (see Algorithms 8 and 9) and are omitted here for brevity.}
 
 % ----------
 % ----------
@@ -658,7 +658,7 @@ This algorithm serves as a wrapper around the Nodemailer transport service. Its 
 \textbf{Input:} complaints submitted by students of BA which are pending \\
 \textbf{Output:} An update to the specified complaint record transitioning its status and saving the advisor's remarks \\
 
-This algorithm maps the initial stage of a student's complaints flow. When a new submission arrives, its status defaults to \textit{BA\_PENDING} and is routed to the corresponding department. The BA retrieves these pending items and adds remarks. If rejected, the COMPL is halted permanently. If accepted, the status escalates to \textit{HOD\_PENDING}, awaiting final decision from the Head of Department. Both outcomes log the advisor's remarks and a precise review timestamp.
+This algorithm maps the initial stage of a student's complaints flow. When a new submission arrives, its status defaults to \textit{BA\_PENDING} and is routed to the corresponding department. The BA retrieves these pending items and adds remarks. If rejected, the COMPL is halted pending student revision. If accepted, the status escalates to \textit{HOD\_PENDING}, awaiting final decision from the Head of Department. Both outcomes log the advisor's remarks and a precise review timestamp.
 
 \begin{algorithm}[htbp]
 \caption{Batch Advisor Decision Workflow}
@@ -729,7 +729,7 @@ This algorithm maps the initial stage of a student's complaints flow. When a new
 \textbf{Input:} A user session belonging to an HOD, the $complaint\_id$, and a review decision ($is\_accepted$, $is\_reassigned$, along with optional $remarks$ and a $newDepartment$) \\
 \textbf{Output:} An update to the specified complaint record culminating in final acceptance, rejection, or reassignment \\
 
-This algorithm maps the conclusive stage of a student's complaint's status. When a BA forwards a verified complaint, its status transitions to \textit{HOD\_PENDING}. The HOD assesses the COMPL. Rejection permanently halts the COMPL. Acceptance marks the complaint as successfully resolved (\textit{HOD\_ACCEPTED}). Crucially, if the complaint was incorrectly routed, the HOD can reassign the ticket to a new target department, resetting its state back to \textit{BA\_PENDING} within that new department's queue.
+This algorithm maps the conclusive stage of a student's complaint's status. When a BA forwards a verified complaint, its status transitions to \textit{HOD\_PENDING}. The HOD assesses the COMPL. Rejection permanently halts the COMPL. Acceptance marks the complaint as successfully resolved (\textit{HOD\_ACCEPTED}). Importantly, if the complaint was incorrectly routed, the HOD can reassign the ticket to a new target department, resetting its state back to \textit{BA\_PENDING} within that new department's queue.
 
 \begin{algorithm}[H]
 \caption{HOD Decision Workflow}
@@ -934,7 +934,7 @@ This algorithm breaks down the two-step process conducted by an Administrator to
         \textbf{API/SDK Name} & \textbf{Purpose} & \textbf{Used In Module} \\
         \hline
         \textbf{Inngest} &
-        Provides serverless background jobs and scheduled task execution. It is utilized to handle asynchronous event-driven workflows, such as pausing execution to publish announcements at a scheduled date after a specific time limit. \newline
+        Provides serverless background jobs and scheduled task execution. It is used to handle asynchronous event-driven workflows, such as pausing execution to publish announcements at a scheduled date after a specific time limit. \newline
         \textbf{Authentication:} Authenticates with the Inngest platform via environment-level API keys (implicit in the SDK setup). &
         Scheduling Module \\
         \hline
@@ -951,8 +951,8 @@ This algorithm breaks down the two-step process conducted by an Administrator to
         \textbf{API/SDK Name} & \textbf{Purpose} & \textbf{Used In Module} \\
         \hline
         \textbf{Better-Auth} &
-        Acts as the primary comprehensive authentication and authorization framework. It manages the full user lifecycle including sign-up, email/password login, email verification, password resets, and secure session management. It also integrates Role-Based Access Control (RBAC) to enforce permissions across different user roles (e.g., Admin, Student, Professor). \newline
-        \textbf{Authentication:} Utilizes secure HTTP-only Next.js cookies and database-backed sessions via a Prisma PostgreSQL adapter. &
+        Acts as the primary complete authentication and authorization framework. It manages the full user lifecycle including sign-up, email/password login, email verification, password resets, and secure session management. It also integrates Role-Based Access Control (RBAC) to enforce permissions across different user roles (e.g., Admin, Student, Professor). \newline
+        \textbf{Authentication:} Uses secure HTTP-only Next.js cookies and database-backed sessions via a Prisma PostgreSQL adapter. &
         User Management / Authentication Module \\
         \hline
         \textbf{Nodemailer} &
@@ -972,12 +972,7 @@ This algorithm breaks down the two-step process conducted by an Administrator to
 
 \section{User Interface Implementation}
 
-This section presents a detailed explanation of all user interface screens
-developed for the system. Each screen is discussed in terms of its purpose,
-functionalities, navigation flow, validations, and integration with backend modules.
-
-Students are required to include screenshots of every major screen
-implemented in the system.
+This section details the user interface architecture established for the platform. Each primary view is analyzed regarding its functional purpose, navigation pathways, validation boundaries, and explicit connections to the backend server architecture.
 
 % -------------------------------------------------
 % 5.5.1 UI Design Approach
@@ -985,9 +980,9 @@ implemented in the system.
 
 \subsection{UI Design Approach}
 
-The project utilizes shadcn/ui, a collection of beautifully designed, copy-pasteable components built on Radix UI primitives and Tailwind CSS. The design follows a modern minimalist philosophy emphasizing ``less is more'' with clean, uncluttered interfaces, ample white space, subtle shadows for depth and hierarchy. This creates sleek, elegant UIs that distinct from heavier systems like Material Design.
+The project uses shadcn/ui, a collection of beautifully designed, copy-pasteable components built on Radix UI primitives and Tailwind CSS. The design follows a modern minimalist philosophy emphasizing ``less is more'' with clean, uncluttered interfaces, ample white space, subtle shadows for depth and hierarchy. This creates sleek, elegant UIs that distinct from heavier systems like Material Design.
 
-\textbf{UI/UX methodology} centers on developer-owned, composable components with beautiful defaults that ensure unified appearance out-of-the-box. Components are designed to naturally fit together as a consistent system, promoting rapid iteration, customization via design tokens (CSS variables for colors, spacing, radii), and a utility-first Tailwind workflow.
+\textbf{UI/UX methodology} centers on developer-owned, composable components with beautiful defaults that ensure unified appearance out-of-the-box. Components are designed to fit together as a consistent system, promoting rapid iteration, customization via design tokens (CSS variables for colors, spacing, radii), and a utility-first Tailwind workflow.
 
 Wireframes were create using Google stitch, and further design decisions were made while implementing.
 
@@ -995,7 +990,7 @@ Wireframes were create using Google stitch, and further design decisions were ma
 
 \textbf{Accessibility considerations} draw from Radix UI's foundation, using built-in keyboard navigation, focus management, ARIA attributes, screen reader support, high-contrast ratios (where customized), and reduced-motion preferences. Components aim for WCAG compliance, though final accessibility depends on implementation choices like proper semantic usage and alt text.
 
-\textbf{Responsive design strategy} adopts a mobile-first approach leveraging Tailwind's responsive utilities (breakpoints: sm 640px, md 768px, lg 1024px, xl 1280px, etc.). Components adapt fluidly via classes like sm md, ensuring seamless scaling across devices with adaptive patterns (e.g., collapsible navigation, drawers on mobile).
+\textbf{Responsive design strategy} adopts a mobile-first approach using Tailwind's responsive utilities (breakpoints: sm 640px, md 768px, lg 1024px, xl 1280px, etc.). Components adapt fluidly via classes like sm md, ensuring smooth scaling across devices with adaptive patterns (e.g., collapsible navigation, drawers on mobile).
 
 Overall, the approach delivers a clean, accessible, themeable, and performant interface aligned with current minimalist web trends.
 
@@ -1021,7 +1016,7 @@ Each major screen explains following structure:
 \subsubsection{Screen 1: Register Screen}
 
 \textbf{Purpose:}
-This screen enables new unauthenticated users to create an account in the system by providing their essential details.
+This screen enables new unauthenticated users to create an account in the system by providing their required details.
 
 \textbf{Components:}
 \begin{itemize}
@@ -1117,7 +1112,7 @@ This screen provides an interface for students to submit new complaints regardin
 
 \textbf{Components:} \begin{itemize} \item \textbf{Header:} Title ("New Complaint") and helper text explaining the purpose and destination of the complaint. \item \textbf{Complaint Form:} \begin{itemize} \item Title input field \item Details textarea for concise description \item Category dropdown (e.g., ACADEMIC) \item Action Buttons: "Reset" to clear the form and "Submit" to send the complaint. \end{itemize} \end{itemize}
 
-\textbf{Functional Flow:} The user accesses the screen and fills in the necessary details—assigning a title, specifying the complaint details, selecting an appropriate category. The user can click "Reset" at any point to clear their inputs. Upon clicking "Submit", a loading transition starts ("Submiting..."). If the submission is successful, a confirmation toast appears, the form is reset, and the user is redirected back to the main complaints listing page (\texttt{/student/complaints}). If an error occurs, an error toast notifies the user.
+\textbf{Functional Flow:} The user accesses the screen and fills in the necessary details (assigning a title, specifying the complaint details, selecting an appropriate category). The user can click "Reset" at any point to clear their inputs. Upon clicking "Submit", a loading transition starts ("Submiting..."). If the submission is successful, a confirmation toast appears, the form is reset, and the user is redirected back to the main complaints listing page (\texttt{/student/complaints}). If an error occurs, an error toast notifies the user.
 
 \textbf{Backend Integration:} The form uses a Next.js Server Action named \texttt{CreateComplaint}. This action handles the secure processing of the complaint data on the server. The submission process is wrapped in React's \texttt{useTransition} hook to manage the pending UI state and a \texttt{tryCatch} utility to gracefully handle any server-side exceptions or API failures without unmounting the form.
 
@@ -1145,7 +1140,7 @@ For attendance, the default state for all students is "Absent". The professor ca
 
 Upon clicking "Mark Attendance", the client initiates a server action transition. If successful, a toast notification confirms submission, the form's lecture topic is cleared, and the attendance states revert to the default (Absent).
 
-\textbf{Backend Integration:} The initial student list is fetched asynchronously via the \texttt{getProfessorSectionStudents({ offeringId })} function on the server side before the page fully renders. The page leverages a \texttt{Suspense} boundary to display a skeleton loader while this data is fetching. Form submission utilizes a Next.js Server Action named \texttt{markAttendance}. The action executes safely via a \texttt{tryCatch} utility, running inside a React \texttt{useTransition} hook to maintain UI responsiveness without a page reload.
+\textbf{Backend Integration:} The initial student list is fetched asynchronously via the \texttt{getProfessorSectionStudents({ offeringId })} function on the server side before the page fully renders. The page uses a \texttt{Suspense} boundary to display a skeleton loader while this data is fetching. Form submission uses a Next.js Server Action named \texttt{markAttendance}. The action executes safely via a \texttt{tryCatch} utility, running inside a React \texttt{useTransition} hook to maintain UI responsiveness without a page reload.
 
 \textbf{Validation:} The \texttt{AttendanceForm} uses \texttt{react-hook-form} with a Zod resolver (\texttt{attendanceFormSchema}). \begin{itemize} \item \textbf{Date Validation:} The date picker restricts selection to the current date or past dates, filtering out weekends. Manually selecting an invalid date updates the field error state instantly. \item \textbf{Time Validation:} The logic prevents selecting an 'End Time' that is the identical block as the 'Start Time'. \item \textbf{General Validation:} Any failed constraints during submission trigger inline field errors or global error toasts. \end{itemize}
 
@@ -1171,7 +1166,7 @@ This screen provides Batch Advisors with a centralized dashboard to view, manage
 
 \textbf{Functional Flow:} The Batch Advisor accesses the page to see a paginated list of complaints. They can filter the data using the search bar, dropdowns, or date picker; these interactions dynamically update the URL search parameters to maintain state. The table columns can be reordered by dragging the headers horizontally. Clicking on the "Actions" column allows the advisor to interact with a specific complaint (e.g., view details or change status). The pagination controls at the bottom navigate through large data sets.
 
-\textbf{Backend Integration:} The page uses Next.js server components to fetch data initially. \texttt{baComplaintsSearchParamsCache} from \texttt{nuqs} parses the URL search parameters on the server and passes them to the \texttt{baGetComplaints(params)} data access layer, executing database queries efficiently. For client-side interactions, the \texttt{BaComplaintsTable} utilizes \texttt{nuqs}' \texttt{useQueryStates} to synchronize filter, sort, and pagination states (like \texttt{sortBy}, \texttt{page}, \texttt{status}) with the browser's URL, updating the server-rendered results incrementally.
+\textbf{Backend Integration:} The page uses Next.js server components to fetch data initially. \texttt{baComplaintsSearchParamsCache} from \texttt{nuqs} parses the URL search parameters on the server and passes them to the \texttt{baGetComplaints(params)} data access layer, executing database queries efficiently. For client-side interactions, the \texttt{BaComplaintsTable} uses \texttt{nuqs}' \texttt{useQueryStates} to synchronize filter, sort, and pagination states (like \texttt{sortBy}, \texttt{page}, \texttt{status}) with the browser's URL, updating the server-rendered results incrementally.
 
 \textbf{Validation:} Filter variables and pagination inputs are validated and parsed through tightly typed \texttt{nuqs} parsers (\texttt{baComplaintsSearchParamsParsers}) to ensure the backend receives clean, safe parameters (e.g., ensuring page numbers are integers, and categories map to valid \texttt{ComplaintCategory} enums).
 
@@ -1261,9 +1256,9 @@ This screen provides Batch Advisors with a centralized dashboard to view, manage
 
 \begin{itemize}
     \item \textbf{Strategic Suspense Boundaries \& Skeleton Loaders:} Implements the wrapper-renders-first pattern across all portal roles. The page shell and core UI elements paint immediately, while data-heavy tables are deferred using dedicated skeleton components (e.g., \texttt{AtRiskStudentsTableSkeleton}), ensuring faster initial layouts.
-    \item \textbf{Parallel Independent Database Queries:} Utilizes \texttt{Promise.all()} to concurrently fetch lists and their total counts alongside required relations (e.g., in \texttt{get-complaints.ts}). This eliminates sequential waterfalls and reduces database round-trips, making data-heavy routes significantly faster.
+    \item \textbf{Parallel Independent Database Queries:} Uses \texttt{Promise.all()} to concurrently fetch lists and their total counts alongside required relations (e.g., in \texttt{get-complaints.ts}). This eliminates sequential waterfalls and reduces database round-trips, making data-heavy routes faster.
     \item \textbf{Per-Request Deduplication:} Wraps global authorization checks (e.g., \texttt{requireSession}) in \texttt{React.cache()}. If multiple React Server Components on a single page request the user session natively, the database query executes exactly once.
-    \item \textbf{Non-Blocking UI Transitions:} Heavily utilizes \texttt{useTransition} for parameter updates via \texttt{nuqs} and form submissions. The interface remains fully interactive instead of freezing while Next.js fetches fresh Server Component payloads for sorting, filtering, or pagination.
+    \item \textbf{Non-Blocking UI Transitions:} Heavily uses \texttt{useTransition} for parameter updates via \texttt{nuqs} and form submissions. The interface remains fully interactive instead of freezing while Next.js fetches fresh Server Component payloads for sorting, filtering, or pagination.
     \item \textbf{Asynchronous Sidebar Streaming:} Isolates non-critical peripheral data, such as sidebar announcements, within \texttt{Suspense} boundaries. This ensures that slow auxiliary fetches never block the main content's rendering pipeline.
 \end{itemize}
 
@@ -1284,8 +1279,8 @@ This screen provides Batch Advisors with a centralized dashboard to view, manage
     \item \textbf{Efficient parsing:} \texttt{nuqs} parsers run on the server once per request, removing any client-side parsing overhead during the initial payload load.
     \item \textbf{Lightweight hooks:} The \texttt{useQueryStates} hook is negligible in size ($\sim$3--5 KB gzipped), automatically memoized, and prevents unnecessary re-renders when unrelated parameters change.
     \item \textbf{No global store footprint:} Avoiding a global state store removes the unnecessary subscription overhead across unrelated components.
-    \item \textbf{Data freshness:} Server Components fetch fresh data on parameter changes, naturally avoiding the stale client cache issues that are common in pure client-side state management architectures.
-    \item \textbf{Near-zero bundle impact:} Combining \texttt{nuqs} with built-in React hooks keeps the client JavaScript bundle extremely small.
+    \item \textbf{Data freshness:} Server Components fetch fresh data on parameter changes, avoiding the stale client cache issues that are common in pure client-side state management architectures.
+    \item \textbf{Near-zero bundle impact:} Combining \texttt{nuqs} with built-in React hooks keeps the client JavaScript bundle small.
 \end{itemize}
 
 
@@ -1295,7 +1290,7 @@ This screen provides Batch Advisors with a centralized dashboard to view, manage
 
 \section{Deployment}
 
-This section describes the deployment platforms and architectural services used in the project.
+This section describes how we used the deployment platforms and architectural services in the project.
 
 \begin{table}[h]
 \centering
@@ -1311,7 +1306,7 @@ Database \& Storage & Neon Serverless Postgres & Managed serverless PostgreSQL d
 \hline
 Background Jobs \& Workflows & Inngest & Event-driven durable execution engine used to manage deferred operations (e.g., scheduled announcements). \\
 \hline
-Security \& Bot Protection & Arcjet dashboard & Integrated security layer for rate limiting, bot detection, and malicious request blocking directly within the Next.js middleware. \\
+Security \& Bot Protection & Arcjet dashboard & Integrated security layer for rate limiting, bot detection, and malicious request blocking directly within the Next.js middleware and each actions. \\
 \hline
 \end{tabularx}
 \end{table}
@@ -1322,23 +1317,10 @@ Security \& Bot Protection & Arcjet dashboard & Integrated security layer for ra
 \section{Chapter Summary}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-This chapter presented the detailed implementation of the proposed system.
-The conceptual design and architectural models discussed in the previous chapter
-were translated into practical software components, including backend services,
-core functional modules, algorithmic engines, and user interface elements.
+This chapter detailed the complete technical realization of the proposed student portal system. It bridged the gap between architectural theory and practical implementation, detailing the specific frameworks, data flows, and module integrations necessary to operationalize the platform.
 
-The development environment and configuration were described to ensure
-reproducibility of the implementation process. Each major module was implemented
-in a modular and loosely coupled manner to enhance maintainability and scalability.
-The core prediction algorithm was integrated into the system backend, enabling
-real-time processing of user input and generation of classification results.
+The configuration of the development environment was outlined to establish a reproducible local setup. Each critical sub-system (such as authentication, student leave request handling, hierarchical complaint processing, and scheduled announcements) was documented conceptually and algorithmically. These modules were designed with strict decoupling principles to ensure reliable long-term maintainability.
 
-External APIs and SDK integrations were discussed where applicable,
-highlighting authentication mechanisms and secure communication practices.
-The user interface implementation was explained screen-by-screen, including
-validation logic, navigation flow, and backend integration.
+Also, the chapter examined the role of specialized external APIs, such as Inngest for asynchronous job scheduling and Better-Auth for role-based session authorization. The user interface implementation verified the system's responsive layout strategy, mapping direct interactions to underlying server actions. 
 
-Finally, deployment strategies were presented, detailing hosting platforms,
-server configuration, and production setup. Overall, this chapter demonstrates
-the successful realization of the proposed system into a functional,
-deployable solution ready for testing and evaluation.
+The documented serverless deployment infrastructure, hosted across Vercel and Neon Serverless Postgres, confirms the platform's readiness for reliable production use. This thorough technical foundation sets the stage for the subsequent testing and evaluation phase.
